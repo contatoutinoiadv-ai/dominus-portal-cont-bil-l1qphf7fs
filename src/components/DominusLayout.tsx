@@ -17,6 +17,7 @@ import {
   History,
   Info,
   CheckCircle,
+  Sparkles,
 } from 'lucide-react'
 import { useAuth } from '@/lib/pocketbase/authContext'
 import { Button } from '@/components/ui/button'
@@ -131,6 +132,7 @@ export const DominusLayout: React.FC<DominusLayoutProps> = ({
         { id: 'parametros_fiscais', label: 'Parâmetros Fiscais (Vigência)', icone: Sliders },
         { id: 'calendario_fiscal', label: 'Calendário de Obrigações', icone: CalendarDays },
         { id: 'auditoria', label: 'Trilha de Auditoria LGPD', icone: History },
+        { id: 'voz_dominus', label: 'Voz da Dominus (Pré-Login)', icone: Sparkles },
         { id: 'documentacao', label: 'Pendências e Configurações', icone: Info },
       ]
     : [
@@ -302,6 +304,15 @@ export const DominusLayout: React.FC<DominusLayoutProps> = ({
                 Conectado como <strong className="text-foreground">{user?.email}</strong>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              {isContador && (
+                <DropdownMenuItem
+                  onClick={() => setTelaAtiva('voz_dominus')}
+                  className="text-xs cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-2 text-amber-400" />
+                  Voz da Dominus (Apresentação)
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={() => setTelaAtiva('documentacao')}
                 className="text-xs cursor-pointer"

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '@/lib/pocketbase/authContext'
-import { TelaLogin } from '@/components/TelaLogin'
+import { ApresentacaoLoginWrapper } from '@/components/ApresentacaoLoginWrapper'
 import { DominusLayout } from '@/components/DominusLayout'
 import { PortalCliente } from '@/components/PortalCliente'
 import { HistoricoCliente } from '@/components/HistoricoCliente'
@@ -15,6 +15,7 @@ import { TrilhaAuditoria } from '@/components/TrilhaAuditoria'
 import { ParametrosFiscaisTela } from '@/components/ParametrosFiscaisTela'
 import { ComparadorRegimesTela } from '@/components/ComparadorRegimesTela'
 import { TelaDocumentacaoPendencias } from '@/components/TelaDocumentacaoPendencias'
+import { VozDaDominusTela } from '@/components/VozDaDominusTela'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export const Index: React.FC = () => {
@@ -42,9 +43,9 @@ export const Index: React.FC = () => {
     )
   }
 
-  // Se não estiver autenticado, exibe a tela de login cinematográfica
+  // Se não estiver autenticado, exibe a apresentação cinematográfica como wrapper antes do login
   if (!user) {
-    return <TelaLogin />
+    return <ApresentacaoLoginWrapper />
   }
 
   return (
@@ -65,6 +66,7 @@ export const Index: React.FC = () => {
       {telaEfetiva === 'parametros_fiscais' && <ParametrosFiscaisTela />}
       {telaEfetiva === 'calendario_fiscal' && <CalendarioFiscal />}
       {telaEfetiva === 'auditoria' && <TrilhaAuditoria />}
+      {telaEfetiva === 'voz_dominus' && <VozDaDominusTela />}
 
       {/* Telas do Perfil Cliente */}
       {telaEfetiva === 'portal_cliente' && (
