@@ -38,6 +38,8 @@ export interface Empresa {
   limite_anual_mei?: number
   limite_anual_simples?: number
   permitir_cliente_ver_comparador?: boolean
+  permitir_cliente_ver_diagnostico?: boolean
+  percentual_alerta_diagnostico?: number
   status_ativa?: boolean
   created: string
   updated: string

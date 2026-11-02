@@ -13,7 +13,7 @@ import { RadarRiscosFiscais } from '@/components/RadarRiscosFiscais'
 import { CalendarioFiscal } from '@/components/CalendarioFiscal'
 import { TrilhaAuditoria } from '@/components/TrilhaAuditoria'
 import { ParametrosFiscaisTela } from '@/components/ParametrosFiscaisTela'
-import { ComparadorRegimesTela } from '@/components/ComparadorRegimesTela'
+import { DiagnosticoFiscalTela } from '@/components/DiagnosticoFiscalTela'
 import { TelaDocumentacaoPendencias } from '@/components/TelaDocumentacaoPendencias'
 import { VozDaDominusTela } from '@/components/VozDaDominusTela'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -59,10 +59,12 @@ export const Index: React.FC = () => {
       {telaEfetiva === 'dashboard_contador' && (
         <DashboardContador onNavegarParaFila={() => setTelaAtiva('fila_trabalho')} />
       )}
+      {(telaEfetiva === 'diagnostico_fiscal' || telaEfetiva === 'comparador_regimes') && (
+        <DiagnosticoFiscalTela />
+      )}
       {telaEfetiva === 'fila_trabalho' && <FilaTrabalhoContador />}
       {telaEfetiva === 'cadastro_empresas' && <CadastroEmpresasEnquadramento />}
       {telaEfetiva === 'radar_riscos' && <RadarRiscosFiscais />}
-      {telaEfetiva === 'comparador_regimes' && <ComparadorRegimesTela />}
       {telaEfetiva === 'parametros_fiscais' && <ParametrosFiscaisTela />}
       {telaEfetiva === 'calendario_fiscal' && <CalendarioFiscal />}
       {telaEfetiva === 'auditoria' && <TrilhaAuditoria />}
@@ -70,12 +72,17 @@ export const Index: React.FC = () => {
 
       {/* Telas do Perfil Cliente */}
       {telaEfetiva === 'portal_cliente' && (
-        <PortalCliente onVerHistorico={() => setTelaAtiva('historico_lancamentos')} />
+        <PortalCliente
+          onVerHistorico={() => setTelaAtiva('historico_lancamentos')}
+          onNavegarParaDiagnostico={() => setTelaAtiva('diagnostico_cliente')}
+        />
+      )}
+      {(telaEfetiva === 'diagnostico_cliente' || telaEfetiva === 'comparador_cliente') && (
+        <DiagnosticoFiscalTela />
       )}
       {telaEfetiva === 'dashboard_cliente' && <DashboardCliente />}
       {telaEfetiva === 'historico_lancamentos' && <HistoricoCliente />}
       {telaEfetiva === 'documentos_cliente' && <DocumentosCliente />}
-      {telaEfetiva === 'comparador_cliente' && <ComparadorRegimesTela />}
 
       {/* Tela de Documentação e Pendências (Comum a ambos) */}
       {telaEfetiva === 'documentacao' && <TelaDocumentacaoPendencias />}

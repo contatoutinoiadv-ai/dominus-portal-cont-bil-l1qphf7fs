@@ -18,6 +18,7 @@ import {
   Info,
   CheckCircle,
   Sparkles,
+  LineChart,
 } from 'lucide-react'
 import { useAuth } from '@/lib/pocketbase/authContext'
 import { Button } from '@/components/ui/button'
@@ -122,13 +123,19 @@ export const DominusLayout: React.FC<DominusLayoutProps> = ({
   }
 
   // Itens de Menu conforme Perfil
+  // Requisito 1: "Inteligência Fiscal" é o SEGUNDO item, logo abaixo de "Visão Geral e Faturamento", com ícone de análise estratégica (LineChart)
+  const permitirVerDiagnostico =
+    empresa?.permitir_cliente_ver_diagnostico !== undefined
+      ? !!empresa?.permitir_cliente_ver_diagnostico
+      : !!empresa?.permitir_cliente_ver_comparador
+
   const itensMenu = isContador
     ? [
         { id: 'dashboard_contador', label: 'Painel Geral da Carteira', icone: Briefcase },
+        { id: 'diagnostico_fiscal', label: 'Inteligência Fiscal', icone: LineChart },
         { id: 'fila_trabalho', label: 'Fila de Lançamentos', icone: FileSpreadsheet },
         { id: 'radar_riscos', label: 'Radar de Riscos Fiscais', icone: Layers },
         { id: 'cadastro_empresas', label: 'Cadastro e Enquadramento', icone: Building2 },
-        { id: 'comparador_regimes', label: 'Comparador de Regimes', icone: Sliders },
         { id: 'parametros_fiscais', label: 'Parâmetros Fiscais (Vigência)', icone: Sliders },
         { id: 'calendario_fiscal', label: 'Calendário de Obrigações', icone: CalendarDays },
         { id: 'auditoria', label: 'Trilha de Auditoria LGPD', icone: History },
@@ -137,12 +144,11 @@ export const DominusLayout: React.FC<DominusLayoutProps> = ({
       ]
     : [
         { id: 'portal_cliente', label: 'Visão Geral e Faturamento', icone: Building2 },
-        { id: 'dashboard_cliente', label: 'Inteligência Fiscal', icone: Briefcase },
+        ...(permitirVerDiagnostico
+          ? [{ id: 'diagnostico_cliente', label: 'Inteligência Fiscal', icone: LineChart }]
+          : [{ id: 'dashboard_cliente', label: 'Inteligência Fiscal', icone: LineChart }]),
         { id: 'historico_lancamentos', label: 'Histórico de Faturamento', icone: FileSpreadsheet },
         { id: 'documentos_cliente', label: 'Guias e Documentos', icone: CalendarDays },
-        ...(empresa?.permitir_cliente_ver_comparador
-          ? [{ id: 'comparador_cliente', label: 'Simulação Tributária', icone: Sliders }]
-          : []),
         { id: 'documentacao', label: 'Sobre o Sistema', icone: Info },
       ]
 

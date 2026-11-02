@@ -12,13 +12,23 @@ import {
 import pb from '@/lib/pocketbase/client'
 import { Empresa, LancamentoFaturamento } from '@/types/dominus'
 
+import { compararRegimesTributarios, PARAMETROS_VIGENTES_PADRAO } from '@/lib/taxEngine'
+
 export interface ItemRisco {
   empresa: Empresa
-  tipoRisco: 'sublimite' | 'limite_teto' | 'fator_r_transicao' | 'desvio_atipico' | 'inadimplente'
+  tipoRisco:
+    | 'sublimite'
+    | 'limite_teto'
+    | 'fator_r_transicao'
+    | 'desvio_atipico'
+    | 'inadimplente'
+    | 'diagnostico_fiscal_oportunidade'
   titulo: string
   descricao: string
   nivel: 'atencao' | 'alerta' | 'critico'
   valorAtual: string
+  economiaIdentificada?: number
+  regimeRecomendado?: string
 }
 
 export const RadarRiscosFiscais: React.FC = () => {
@@ -91,14 +101,74 @@ export const RadarRiscosFiscais: React.FC = () => {
               empresa: emp,
               tipoRisco: 'limite_teto',
               titulo: 'Risco de Desenquadramento do MEI',
-              descricao: `Faturamento acumulado em ${percMei.toFixed(1)}% do limite de R$ 81.000. Recomenda-se simular migração para Simples ME.`,
+              descricao: `Faturamento acumulado em ${percMei.toFixed(1)}% do limite de R$ 81.000. Recomenda-se diagnóstico fiscal para transição ao Simples Nacional.`,
               nivel: percMei >= 95 ? 'critico' : 'alerta',
               valorAtual: `${percMei.toFixed(1)}% do teto MEI`,
             })
           }
         }
 
-        // 3. Desvios Atípicos (Salto ou Queda > 50% em relação ao mês anterior)
+        // 3. Oportunidade Identificada pelo Diagnóstico Fiscal Dominus
+        // Gatilho configurável pelo contador (padrão 10%)
+        const faturamentoMensalBase =
+          lancsEmp.length > 0 && lancsEmp[0].total_faturamento_liquido
+            ? Number(lancsEmp[0].total_faturamento_liquido)
+            : soma12m > 0
+              ? soma12m / 12
+              : 50000
+
+        const rbt12Calculada = soma12m > 0 ? soma12m : faturamentoMensalBase * 12
+        const folha12mCalculada = rbt12Calculada * 0.3
+
+        try {
+          const resultadoDiag = compararRegimesTributarios(
+            {
+              regime: emp.regime_vigente || 'Simples Nacional',
+              competencia: '2025-05',
+              rbt12: rbt12Calculada,
+              folha12m: folha12mCalculada,
+              linhas: [
+                {
+                  linhaId: `diag_${emp.id}`,
+                  nomeLinha: 'Receita Operacional',
+                  tipoReceita: 'servicos',
+                  anexoSimples: 'III',
+                  sujeitoFatorR: true,
+                  valorBruto: faturamentoMensalBase,
+                  aliquotaMunicipalIss: 0.05,
+                },
+              ],
+            },
+            PARAMETROS_VIGENTES_PADRAO,
+          )
+
+          const percentualGatilho = emp.percentual_alerta_diagnostico || 10
+          if (
+            resultadoDiag.regimeMaisEconomico !== emp.regime_vigente &&
+            resultadoDiag.percentualEconomia >= percentualGatilho &&
+            resultadoDiag.economiaAnualProjetada > 0
+          ) {
+            const valorFormatado = `R$ ${resultadoDiag.economiaAnualProjetada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+            const regimeNovo = resultadoDiag.regimeMaisEconomico
+
+            // Texto exato do Radar de Riscos conforme item 8:
+            // "O Diagnóstico Fiscal identificou economia potencial de {valor}/ano com a migração para {regime}."
+            listaRiscos.push({
+              empresa: emp,
+              tipoRisco: 'diagnostico_fiscal_oportunidade',
+              titulo: 'Oportunidade de Migração de Regime',
+              descricao: `O Diagnóstico Fiscal identificou economia potencial de ${valorFormatado}/ano com a migração para ${regimeNovo}.`,
+              nivel: 'alerta',
+              valorAtual: valorFormatado,
+              economiaIdentificada: resultadoDiag.economiaAnualProjetada,
+              regimeRecomendado: regimeNovo,
+            })
+          }
+        } catch (_) {
+          /* ignore calculation issues defensively */
+        }
+
+        // 4. Desvios Atípicos (Salto ou Queda > 50% em relação ao mês anterior)
         if (lancsEmp.length >= 2) {
           const atual = lancsEmp[0].total_faturamento_liquido || 0
           const anterior = lancsEmp[1].total_faturamento_liquido || 0
@@ -247,11 +317,45 @@ export const RadarRiscosFiscais: React.FC = () => {
                   </div>
                   <h4 className="font-bold text-foreground mt-0.5">{item.titulo}</h4>
                   <p className="text-muted-foreground leading-relaxed">{item.descricao}</p>
+                  {item.tipoRisco === 'diagnostico_fiscal_oportunidade' && (
+                    <div className="pt-1.5 flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[11px] border-primary/40 text-primary hover:bg-primary/10"
+                        onClick={async () => {
+                          const nomeFantasia =
+                            item.empresa.nome_fantasia || item.empresa.razao_social
+                          try {
+                            // Enviar notificação no sino conforme item 9
+                            await pb.collection('notificacoes').create({
+                              empresa_id: item.empresa.id,
+                              destinatario_role: 'cliente',
+                              titulo: `Novo Diagnóstico Fiscal disponível para a ${nomeFantasia}.`,
+                              mensagem: `O Diagnóstico Fiscal Dominus identificou oportunidade com economia estimada de ${item.valorAtual}/ano com migração para ${item.regimeRecomendado}. Acesse o painel para conferir o parecer contábil.`,
+                              tipo: 'geral',
+                              link: 'diagnostico_cliente',
+                              lida: false,
+                            })
+                            alert(
+                              `Notificação e aviso de oportunidade transmitidos com sucesso para a ${nomeFantasia}.`,
+                            )
+                          } catch (err) {
+                            console.error('Erro ao enviar notificação de diagnóstico:', err)
+                          }
+                        }}
+                      >
+                        Notificar Cliente sobre Oportunidade
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-right shrink-0">
                   <span className="text-[10px] text-muted-foreground uppercase block">
-                    Métrica Apurada
+                    {item.tipoRisco === 'diagnostico_fiscal_oportunidade'
+                      ? 'Economia Identificada'
+                      : 'Métrica Apurada'}
                   </span>
                   <span className="font-mono font-bold text-primary text-sm">
                     {item.valorAtual}

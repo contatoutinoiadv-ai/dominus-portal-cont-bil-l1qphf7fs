@@ -57,6 +57,7 @@ export const CadastroEmpresasEnquadramento: React.FC = () => {
     sublimite_estadual: 3600000,
     limite_anual_simples: 4800000,
     limite_anual_mei: 81000,
+    percentual_alerta_diagnostico: 10,
   })
 
   // Formulário Nova Linha de Receita
@@ -143,6 +144,7 @@ export const CadastroEmpresasEnquadramento: React.FC = () => {
       const nova = await pb.collection('empresas').create({
         ...novaEmpresa,
         status_ativa: true,
+        permitir_cliente_ver_diagnostico: true,
         permitir_cliente_ver_comparador: true,
       })
 
@@ -423,6 +425,17 @@ export const CadastroEmpresasEnquadramento: React.FC = () => {
                     </span>
                     <strong className="text-primary font-semibold">
                       {empresaSelecionada.regime_vigente}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px] uppercase">
+                      Diagnóstico Fiscal Dominus
+                    </span>
+                    <strong className="text-foreground">
+                      {empresaSelecionada.permitir_cliente_ver_diagnostico ||
+                      empresaSelecionada.permitir_cliente_ver_comparador
+                        ? 'Liberado ao Cliente'
+                        : 'Restrito ao Contador'}
                     </strong>
                   </div>
                   <div>

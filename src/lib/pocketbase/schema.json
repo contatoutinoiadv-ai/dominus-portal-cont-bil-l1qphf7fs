@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T15:45:24.612Z",
+  "generatedAt": "2026-11-02T16:14:15.628Z",
   "collections": [
     {
       "name": "users",
@@ -208,6 +208,18 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "permitir_cliente_ver_diagnostico",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "percentual_alerta_diagnostico",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

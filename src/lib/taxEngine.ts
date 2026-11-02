@@ -6,7 +6,7 @@
  * 2. MEI (valores fixos por atividade, limite anual e proporcionalidade de abertura, alertas 70/85/95%)
  * 3. Lucro Presumido (presunção por atividade, IRPJ + Adicional 10% excedente trimestral de R$ 60k, CSLL, PIS e COFINS cumulativos, ISS/ICMS)
  * 4. Lucro Real (estimativa simplificada com margens e créditos PIS/COFINS parametrizados)
- * 5. Comparador simultâneo dos 3 regimes com cálculo de economia anual projetada e semáforo
+ * 5. Diagnóstico Fiscal Dominus com análise comparativa dos 3 regimes e parecer estratégico
  * 6. Reforma Tributária (CBS, IBS, IS - modelo de transição)
  */
 
@@ -1486,9 +1486,9 @@ export function calcularLucroReal(
 }
 
 /**
- * Comparador de Regimes Simultâneo:
- * Simula lado a lado Simples Nacional, Lucro Presumido e Lucro Real com os mesmos dados,
- * calculando a economia projetada anual e indicando semáforo (Verde / Amarelo / Vermelho).
+ * Diagnóstico Fiscal Dominus:
+ * Analisa lado a lado Simples Nacional, Lucro Presumido e Lucro Real com os mesmos dados,
+ * calculando a economia identificada e emitindo o parecer da consultoria contábil Dominus.
  */
 export interface ComparativoRegimesResultado {
   simples: ResultadoCalculo

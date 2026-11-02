@@ -37,12 +37,12 @@ import { PORTAL_CONFIG } from '@/config/portalConfig'
 
 interface PortalClienteProps {
   onVerHistorico?: () => void
-  onNavegarParaSimulador?: () => void
+  onNavegarParaDiagnostico?: () => void
 }
 
 export const PortalCliente: React.FC<PortalClienteProps> = ({
   onVerHistorico,
-  onNavegarParaSimulador,
+  onNavegarParaDiagnostico,
 }) => {
   const { user, empresa } = useAuth()
 
@@ -443,6 +443,18 @@ export const PortalCliente: React.FC<PortalClienteProps> = ({
               >
                 <Calendar className="w-4 h-4 text-amber-400" />
                 <span>Histórico 24m</span>
+              </Button>
+            )}
+
+            {onNavegarParaDiagnostico && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onNavegarParaDiagnostico}
+                className="border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 text-xs font-semibold h-10 px-4 rounded-xl flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                <span>Diagnóstico Fiscal</span>
               </Button>
             )}
           </div>

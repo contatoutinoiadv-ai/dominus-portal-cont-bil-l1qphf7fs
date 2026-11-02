@@ -284,7 +284,7 @@ export function executarTestesMotorTributario(): {
     })
   }
 
-  // Teste 7: Comparador de Regimes (Simples vs Presumido vs Real com recomendação)
+  // Teste 7: Diagnóstico Fiscal Dominus (Simples vs Presumido vs Real com recomendação)
   try {
     const inputComp: CalculoInput = {
       regime: 'Simples Nacional',
@@ -313,19 +313,18 @@ export function executarTestesMotorTributario(): {
       ['verde', 'amarelo', 'vermelho'].includes(comp.semaforoRecomendacao)
 
     resultados.push({
-      nome: '7. Comparador de Regimes (Simples, Presumido e Real simultâneos com economia anual)',
+      nome: '7. Diagnóstico Fiscal Dominus (Simples, Presumido e Real com economia identificada)',
       passou: comparouOk,
-      detalhes: `Mais econômico: ${comp.regimeMaisEconomico}. Economia projetada: R$ ${comp.economiaAnualProjetada.toFixed(2)}/ano. Semáforo: ${comp.semaforoRecomendacao}.`,
+      detalhes: `Recomendado: ${comp.regimeMaisEconomico}. Economia identificada: R$ ${comp.economiaAnualProjetada.toFixed(2)}/ano. Semáforo: ${comp.semaforoRecomendacao}.`,
     })
   } catch (err: unknown) {
     const error = err as Error
     resultados.push({
-      nome: '7. Comparador de Regimes',
+      nome: '7. Diagnóstico Fiscal Dominus',
       passou: false,
-      detalhes: error?.message || 'Falha',
+      detalhes: `Falha: ${error?.message || 'erro desconhecido'}`,
     })
   }
-
   // Teste 8: Base de Cálculo Exclusiva de Receita Bruta (Cancelamentos/Devoluções não deduzem base nem imposto)
   try {
     const inputSemCancelamento: CalculoInput = {

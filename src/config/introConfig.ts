@@ -1,5 +1,7 @@
 export interface CenaIntro {
   id: number
+  codigo?: string
+  grupo?: string
   titulo: string
   tipo?: 'monograma_e_letras' | 'padrao' | 'final'
   frase1?: string
@@ -70,6 +72,26 @@ export const INTRO_CONFIG_FALLBACK: IntroConfig = {
       tipo: 'final',
       frase1: 'Acesse seu painel.',
       destaques: ['seu painel'],
+    },
+    {
+      id: 7,
+      codigo: 'G3',
+      grupo: 'G - Crescimento',
+      titulo: 'CRESCIMENTO (G3)',
+      tipo: 'padrao',
+      frase1: 'A {nome_fantasia} está crescendo, {nome}.',
+      frase2: 'Seu Diagnóstico Fiscal foi atualizado com a nova projeção.',
+      destaques: ['Diagnóstico Fiscal', 'nova projeção'],
+    },
+    {
+      id: 8,
+      codigo: 'L_SIMPLES',
+      grupo: 'L - Padrão Simples',
+      titulo: 'SIMPLES NACIONAL (L)',
+      tipo: 'padrao',
+      frase1: 'Seu Diagnóstico Fiscal está atualizado.',
+      frase2: 'No Simples, cada real conta, e a Dominus acompanha cada um deles.',
+      destaques: ['Diagnóstico Fiscal', 'Dominus'],
     },
   ],
 }
