@@ -280,7 +280,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
           entidadeId: lancamentoExistente.id,
           valorAnterior: lancamentoExistente,
           valorNovo: dataPayload,
-          detalhes: `Faturamento atualizado pelo cliente para a competência ${competencia}.`,
+          detalhes: `Receita Bruta atualizada pelo cliente para a competência ${competencia}.`,
         })
       } else {
         // Criar novo
@@ -295,15 +295,15 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
           entidade: 'lancamentos_faturamento',
           entidadeId: novo.id,
           valorNovo: dataPayload,
-          detalhes: `Novo faturamento mensal enviado pelo cliente para a competência ${competencia}.`,
+          detalhes: `Nova Receita Bruta mensal enviada pelo cliente para a competência ${competencia}.`,
         })
 
         // Notificar o contador chefe em tempo real
         await pb.collection('notificacoes').create({
           empresa_id: empresa.id,
           destinatario_role: 'contador',
-          titulo: 'Novo Faturamento Recebido',
-          mensagem: `A empresa ${empresa.razao_social} enviou o faturamento de ${competencia} com receita bruta de R$ ${faturamentoTotalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
+          titulo: 'Nova Receita Bruta Recebida',
+          mensagem: `A empresa ${empresa.razao_social} informou a Receita Bruta de ${competencia} no valor total de R$ ${faturamentoTotalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
           tipo: 'faturamento_enviado',
           lida: false,
         })
@@ -319,11 +319,11 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
         formData.append('arquivo', arquivo)
         formData.append('competencia', competencia)
         formData.append('enviado_por_role', 'cliente')
-        formData.append('observacao', 'Anexado no envio de faturamento')
+        formData.append('observacao', 'Anexado no envio de Receita Bruta')
         await pb.collection('documentos').create(formData)
       }
 
-      setMensagemSucesso('Faturamento enviado com sucesso ao escritório contábil!')
+      setMensagemSucesso('Receita Bruta informada com sucesso ao escritório contábil!')
       checarLancamentoExistente(competencia)
     } catch (err: unknown) {
       console.error(err)
@@ -416,10 +416,10 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                 <div>
                   <CardTitle className="text-lg font-bold flex items-center gap-2">
                     <FileText className="w-5 h-5 text-primary" />
-                    Informar Faturamento Mensal
+                    Informar Receita Bruta Mensal
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground">
-                    Preencha os valores da competência em menos de 1 minuto.
+                    Preencha os valores de Receita Bruta da competência em menos de 1 minuto.
                   </CardDescription>
                 </div>
                 {lancamentoExistente && badgeStatus(lancamentoExistente.status)}
@@ -431,8 +431,8 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                 <div className="mb-4 p-3 rounded-lg bg-muted/60 border border-border text-xs flex items-center gap-2 text-muted-foreground">
                   <Lock className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>
-                    Este faturamento já foi <strong>Validado</strong> pelo escritório e está
-                    bloqueado para edição.
+                    Este lançamento de Receita Bruta já foi <strong>Validado</strong> pelo
+                    escritório e está bloqueado para edição.
                   </span>
                 </div>
               )}
@@ -477,10 +477,10 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                       {semFaturamento ? (
                         <span className="flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4" />
-                          Mês Declarado Sem Faturamento
+                          Mês Declarado Sem Receita Bruta
                         </span>
                       ) : (
-                        'Declarar Mês Sem Faturamento (R$ 0)'
+                        'Declarar Mês Sem Receita Bruta (R$ 0)'
                       )}
                     </Button>
                   </div>
@@ -489,9 +489,17 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                 {!semFaturamento && (
                   <div className="space-y-4 pt-2">
                     <div className="border-t border-border pt-3">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        Linhas de Receita Cadastradas:
-                      </p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          Receita Bruta por Linha de Receita:
+                        </p>
+                        <span className="text-[11px] font-mono font-semibold text-primary">
+                          Total: R${' '}
+                          {faturamentoTotalBruto.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
 
                       {linhasReceita.length === 0 ? (
                         <div className="p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground">
@@ -499,44 +507,70 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                           contador.
                         </div>
                       ) : (
-                        linhasReceita.map((linha) => (
-                          <div
-                            key={linha.id}
-                            className="p-3 bg-muted/20 border border-border rounded-xl mb-3 space-y-1.5"
-                          >
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-semibold text-foreground">
-                                {linha.nome_linha}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground uppercase bg-muted px-2 py-0.5 rounded">
-                                {linha.tipo_receita}{' '}
-                                {linha.anexo_simples ? `• Anexo ${linha.anexo_simples}` : ''}
-                              </span>
+                        linhasReceita.map((linha) => {
+                          const rotuloLinha = linha.nome_linha
+                            .toLowerCase()
+                            .includes('receita bruta')
+                            ? linha.nome_linha
+                            : `Receita Bruta — ${linha.nome_linha}`
+
+                          return (
+                            <div
+                              key={linha.id}
+                              className="p-3 bg-muted/20 border border-border rounded-xl mb-3 space-y-1.5"
+                            >
+                              <div className="flex items-center justify-between text-xs">
+                                <Label
+                                  htmlFor={`linha-${linha.id}`}
+                                  className="font-semibold text-foreground cursor-pointer"
+                                >
+                                  {rotuloLinha}
+                                </Label>
+                                <span className="text-[10px] text-muted-foreground uppercase bg-muted px-2 py-0.5 rounded">
+                                  {linha.tipo_receita}{' '}
+                                  {linha.anexo_simples ? `• Anexo ${linha.anexo_simples}` : ''}
+                                </span>
+                              </div>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">
+                                  R$
+                                </span>
+                                <Input
+                                  id={`linha-${linha.id}`}
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0,00"
+                                  disabled={travado || salvando}
+                                  value={
+                                    valoresPorLinha[linha.id] === undefined
+                                      ? ''
+                                      : valoresPorLinha[linha.id]
+                                  }
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value) || 0
+                                    setValoresPorLinha((prev) => ({ ...prev, [linha.id]: val }))
+                                  }}
+                                  className="pl-9 font-mono text-sm"
+                                />
+                              </div>
                             </div>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">
-                                R$
-                              </span>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                placeholder="0,00"
-                                disabled={travado || salvando}
-                                value={
-                                  valoresPorLinha[linha.id] === undefined
-                                    ? ''
-                                    : valoresPorLinha[linha.id]
-                                }
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value) || 0
-                                  setValoresPorLinha((prev) => ({ ...prev, [linha.id]: val }))
-                                }}
-                                className="pl-9 font-mono text-sm"
-                              />
-                            </div>
-                          </div>
-                        ))
+                          )
+                        })
+                      )}
+
+                      {linhasReceita.length > 0 && (
+                        <div className="p-2.5 rounded-lg bg-muted/30 border border-border flex items-center justify-between text-xs mt-1 mb-2">
+                          <span className="text-muted-foreground font-medium">
+                            Soma da Receita Bruta do Mês:
+                          </span>
+                          <span className="font-mono font-bold text-foreground">
+                            R${' '}
+                            {faturamentoTotalBruto.toLocaleString('pt-BR', {
+                              minimumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
                       )}
                     </div>
 
@@ -605,7 +639,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                   <Textarea
                     id="obs-cliente"
                     rows={2}
-                    placeholder="Alguma particularidade no mês? Ex: faturamento com retenção de ISS, venda interestadual..."
+                    placeholder="Alguma particularidade no mês? Ex: receita com retenção de ISS, venda interestadual..."
                     value={observacao}
                     disabled={travado || salvando}
                     onChange={(e) => setObservacao(e.target.value)}
@@ -626,7 +660,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
-                        Transmitir Faturamento de {competencia}
+                        Transmitir Receita Bruta de {competencia}
                         <ArrowRight className="w-4 h-4" />
                       </span>
                     )}
@@ -655,7 +689,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
               {/* Base de Cálculo: Receita Bruta */}
               <div className="p-3.5 rounded-xl bg-muted/40 border border-border flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Receita Bruta</p>
+                  <p className="text-xs text-muted-foreground">Receita Bruta (Base de Cálculo)</p>
                   <p className="text-xl font-bold font-mono text-foreground mt-0.5">
                     R$ {faturamentoTotalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
@@ -718,7 +752,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                       </p>
                       <p className="text-[10px] text-muted-foreground leading-relaxed">
                         O Fator R utiliza a Receita Bruta acumulada dos últimos 12 meses anteriores
-                        (RBT12), e não apenas o faturamento do mês informado. O enquadramento
+                        (RBT12), e não apenas a receita bruta do mês informado. O enquadramento
                         automático (Anexo III para razão &ge; 28% ou Anexo V para inferior) será
                         definido assim que houver histórico registrado.
                       </p>
