@@ -1,0 +1,84 @@
+import React, { useState } from 'react'
+import { useAuth } from '@/lib/pocketbase/authContext'
+import { TelaLogin } from '@/components/TelaLogin'
+import { DominusLayout } from '@/components/DominusLayout'
+import { PortalCliente } from '@/components/PortalCliente'
+import { HistoricoCliente } from '@/components/HistoricoCliente'
+import { DocumentosCliente } from '@/components/DocumentosCliente'
+import { DashboardCliente } from '@/components/DashboardCliente'
+import { DashboardContador } from '@/components/DashboardContador'
+import { FilaTrabalhoContador } from '@/components/FilaTrabalhoContador'
+import { CadastroEmpresasEnquadramento } from '@/components/CadastroEmpresasEnquadramento'
+import { RadarRiscosFiscais } from '@/components/RadarRiscosFiscais'
+import { CalendarioFiscal } from '@/components/CalendarioFiscal'
+import { TrilhaAuditoria } from '@/components/TrilhaAuditoria'
+import { ParametrosFiscaisTela } from '@/components/ParametrosFiscaisTela'
+import { ComparadorRegimesTela } from '@/components/ComparadorRegimesTela'
+import { TelaDocumentacaoPendencias } from '@/components/TelaDocumentacaoPendencias'
+import { Skeleton } from '@/components/ui/skeleton'
+
+export const Index: React.FC = () => {
+  const { user, isLoading, isContador } = useAuth()
+  const [telaAtiva, setTelaAtiva] = useState<string>('')
+  const [termoBuscaGlobal, setTermoBuscaGlobal] = useState<string>('')
+
+  // Definir tela inicial padrão conforme perfil
+  const telaEfetiva = telaAtiva || (isContador ? 'dashboard_contador' : 'portal_cliente')
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#070a0f] flex flex-col items-center justify-center p-6 space-y-4">
+        <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xl font-black animate-pulse">
+          D
+        </div>
+        <p className="text-sm font-mono text-slate-400 tracking-wider">
+          CARREGANDO DOMINUS PORTAL...
+        </p>
+        <div className="w-48 space-y-2">
+          <Skeleton className="h-2 w-full bg-slate-800" />
+          <Skeleton className="h-2 w-3/4 mx-auto bg-slate-800" />
+        </div>
+      </div>
+    )
+  }
+
+  // Se não estiver autenticado, exibe a tela de login cinematográfica
+  if (!user) {
+    return <TelaLogin />
+  }
+
+  return (
+    <DominusLayout
+      telaAtiva={telaEfetiva}
+      setTelaAtiva={setTelaAtiva}
+      termoBuscaGlobal={termoBuscaGlobal}
+      setTermoBuscaGlobal={setTermoBuscaGlobal}
+    >
+      {/* Telas do Perfil Contador */}
+      {telaEfetiva === 'dashboard_contador' && (
+        <DashboardContador onNavegarParaFila={() => setTelaAtiva('fila_trabalho')} />
+      )}
+      {telaEfetiva === 'fila_trabalho' && <FilaTrabalhoContador />}
+      {telaEfetiva === 'cadastro_empresas' && <CadastroEmpresasEnquadramento />}
+      {telaEfetiva === 'radar_riscos' && <RadarRiscosFiscais />}
+      {telaEfetiva === 'comparador_regimes' && <ComparadorRegimesTela />}
+      {telaEfetiva === 'parametros_fiscais' && <ParametrosFiscaisTela />}
+      {telaEfetiva === 'calendario_fiscal' && <CalendarioFiscal />}
+      {telaEfetiva === 'auditoria' && <TrilhaAuditoria />}
+
+      {/* Telas do Perfil Cliente */}
+      {telaEfetiva === 'portal_cliente' && (
+        <PortalCliente onVerHistorico={() => setTelaAtiva('historico_lancamentos')} />
+      )}
+      {telaEfetiva === 'dashboard_cliente' && <DashboardCliente />}
+      {telaEfetiva === 'historico_lancamentos' && <HistoricoCliente />}
+      {telaEfetiva === 'documentos_cliente' && <DocumentosCliente />}
+      {telaEfetiva === 'comparador_cliente' && <ComparadorRegimesTela />}
+
+      {/* Tela de Documentação e Pendências (Comum a ambos) */}
+      {telaEfetiva === 'documentacao' && <TelaDocumentacaoPendencias />}
+    </DominusLayout>
+  )
+}
+
+export default Index

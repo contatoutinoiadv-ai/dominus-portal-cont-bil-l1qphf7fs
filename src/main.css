@@ -1,0 +1,166 @@
+/* Global styles - Dominus Portal Contábil - Dark Premium Theme */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-heading: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Light Mode Suave */
+    --background: 220 20% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 222 47% 15%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 215 25% 93%;
+    --secondary-foreground: 222 47% 15%;
+
+    --muted: 215 25% 93%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 43 96% 56%; /* Ouro champanhe */
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 32% 88%;
+    --input: 214 32% 88%;
+    --ring: 222 47% 20%;
+
+    --radius: 0.65rem;
+
+    --sidebar-background: 220 25% 96%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 222 47% 15%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 25% 90%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 88%;
+    --sidebar-ring: 222 47% 20%;
+  }
+
+  .dark {
+    /* Dark Premium: Fundo grafite quase preto + camadas azul-noite + ouro champanhe */
+    --background: 224 35% 5%; /* #070a0f */
+    --foreground: 210 25% 96%;
+
+    --card: 224 30% 9%; /* #0f141f */
+    --card-foreground: 210 25% 96%;
+
+    --popover: 224 30% 9%;
+    --popover-foreground: 210 25% 96%;
+
+    --primary: 43 85% 60%; /* Ouro champanhe suave */
+    --primary-foreground: 224 35% 6%;
+
+    --secondary: 222 25% 15%;
+    --secondary-foreground: 210 25% 96%;
+
+    --muted: 223 25% 13%;
+    --muted-foreground: 218 16% 65%;
+
+    --accent: 188 85% 55%; /* Ciano elétrico sutil */
+    --accent-foreground: 224 35% 6%;
+
+    --destructive: 0 75% 58%; /* Carmim */
+    --destructive-foreground: 210 25% 96%;
+
+    --border: 223 25% 18%;
+    --input: 223 25% 18%;
+    --ring: 43 85% 60%;
+
+    --sidebar-background: 224 35% 7%;
+    --sidebar-foreground: 210 25% 96%;
+    --sidebar-primary: 43 85% 60%;
+    --sidebar-primary-foreground: 224 35% 6%;
+    --sidebar-accent: 223 25% 14%;
+    --sidebar-accent-foreground: 210 25% 96%;
+    --sidebar-border: 223 25% 16%;
+    --sidebar-ring: 43 85% 60%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+
+  .font-mono-nums {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  section[aria-label='Notifications alt+T'] {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* Glassmorphism custom classes */
+.glass-panel {
+  background: rgba(15, 20, 31, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-subtle {
+  background: rgba(15, 20, 31, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glow-gold {
+  box-shadow: 0 0 25px -4px rgba(234, 179, 8, 0.18);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 25px -4px rgba(6, 182, 212, 0.2);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.22);
+}
+
+/* Aurora Background */
+@keyframes aurora {
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate(30px, -20px) scale(1.15);
+    opacity: 0.65;
+  }
+}
+
+.animate-aurora-slow {
+  animation: aurora 16s ease-in-out infinite;
+}

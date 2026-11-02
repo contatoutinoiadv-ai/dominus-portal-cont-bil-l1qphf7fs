@@ -1,0 +1,1497 @@
+{
+  "generatedAt": "2026-11-02T13:33:40.319Z",
+  "collections": [
+    {
+      "name": "users",
+      "type": "auth",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || id = @request.auth.id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || id = @request.auth.id)",
+        "create": "",
+        "update": "@request.auth.id != '' && (@request.auth.role = 'contador' || id = @request.auth.id)",
+        "delete": "id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["contador", "cliente"]
+        },
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "must_change_password",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "lgpd_accepted",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "lgpd_accepted_at",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "failed_login_attempts",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "locked_until",
+          "type": "text",
+          "required": false,
+          "system": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
+        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ]
+    },
+    {
+      "name": "empresas",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = id)",
+        "create": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "razao_social",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "nome_fantasia",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cnpj",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "municipio",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "uf",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "email_responsavel",
+          "type": "email",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "telefone_responsavel",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_abertura",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "regime_vigente",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["MEI", "Simples Nacional", "Lucro Presumido", "Lucro Real"]
+        },
+        {
+          "name": "data_inicio_regime",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "sublimite_estadual",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "limite_anual_mei",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "limite_anual_simples",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "permitir_cliente_ver_comparador",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status_ativa",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "deleted_at",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_empresas_cnpj ON empresas (cnpj)",
+        "CREATE INDEX idx_empresas_regime ON empresas (regime_vigente)"
+      ]
+    },
+    {
+      "name": "enquadramentos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "view": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "create": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "regime",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["MEI", "Simples Nacional", "Lucro Presumido", "Lucro Real"]
+        },
+        {
+          "name": "tipo_atividade",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["servicos", "comercio", "industria", "mista"]
+        },
+        {
+          "name": "data_vigencia_inicio",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "data_vigencia_fim",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "rotulo_enquadramento",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "observacoes_internas",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "deleted_at",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_enquadramentos_empresa ON enquadramentos (empresa_id)"]
+    },
+    {
+      "name": "linhas_receita",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "create": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "enquadramento_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "nome_linha",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo_receita",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["servicos", "comercio", "industria"]
+        },
+        {
+          "name": "anexo_simples",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["I", "II", "III", "IV", "V", "Nenhum"]
+        },
+        {
+          "name": "sujeito_fator_r",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "local_incidencia_iss",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["mesmo_municipio", "outro_municipio", "exterior"]
+        },
+        {
+          "name": "municipio_outro_iss",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "aliquota_outro_iss",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "iss_retido_fonte",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "percentual_iss_retido",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "icms_tratamento",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["tributado_normal", "st", "isento", "monofasico"]
+        },
+        {
+          "name": "pis_cofins_tratamento",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["normal", "monofasico"]
+        },
+        {
+          "name": "aliquota_municipal_iss",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "percentual_presuncao_irpj",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "percentual_presuncao_csll",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ordem",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "deleted_at",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_linhas_receita_empresa ON linhas_receita (empresa_id)"]
+    },
+    {
+      "name": "lancamentos_faturamento",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "create": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "update": "@request.auth.id != '' && (@request.auth.role = 'contador' || (@request.auth.empresa_id = empresa_id && (status = 'Enviado' || status = 'Devolvido para correção')))",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "competencia",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "sem_faturamento",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "total_faturamento_bruto",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "total_notas_canceladas",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "total_faturamento_liquido",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "imposto_estimado",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "aliquota_efetiva",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Enviado", "Em análise", "Validado", "Devolvido para correção"]
+        },
+        {
+          "name": "observacao_cliente",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "motivo_devolucao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "arquivo_comprovante",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "enviado_por_user_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "validado_por_user_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "validado_em",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "memoria_calculo_json",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "deleted_at",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_lancamentos_empresa_comp ON lancamentos_faturamento (empresa_id, competencia)"
+      ]
+    },
+    {
+      "name": "lancamento_itens",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "create": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "update": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "lancamento_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "linha_receita_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "nome_linha",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo_receita",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_bruto",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "valor_deducoes",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_liquido",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "imposto_estimado_item",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "detalhes_item_json",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_itens_lancamento ON lancamento_itens (lancamento_id)"]
+    },
+    {
+      "name": "folha_mensal",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "create": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "update": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "competencia",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "valor_salarios",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_pro_labore",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_fgts",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_encargos",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_total_folha",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "origem",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["cliente", "contador", "historico_importado"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_folha_empresa_comp ON folha_mensal (empresa_id, competencia)"
+      ]
+    },
+    {
+      "name": "apuracoes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "create": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "lancamento_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "competencia",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "regime",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "rbt12",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "folha12m",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "fator_r_percentual",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "fator_r_enquadrado_anexo3",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "faturamento_competencia",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "imposto_total_apurado",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "aliquota_efetiva",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "versao_parametros",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "memoria_calculo_completa",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ultrapassou_sublimite",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ultrapassou_limite",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "alerta_limite_nivel",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["ok", "atencao_70", "alerta_85", "critico_95", "estouro"]
+        },
+        {
+          "name": "oficial_contador",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_apuracoes_empresa_comp ON apuracoes (empresa_id, competencia)"]
+    },
+    {
+      "name": "apuracao_detalhes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "create": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "apuracao_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tributo",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "IRPJ",
+            "CSLL",
+            "PIS",
+            "COFINS",
+            "CPP",
+            "ICMS",
+            "ISS",
+            "DAS_TOTAL",
+            "CBS",
+            "IBS",
+            "IS"
+          ]
+        },
+        {
+          "name": "base_calculo",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "aliquota_nominal",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "aliquota_efetiva",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "parcela_deduzir",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_tributo",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo_recolhimento",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "das_unificado",
+            "guia_propria_estadual",
+            "guia_propria_municipal",
+            "darf_federal"
+          ]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_detalhes_apuracao ON apuracao_detalhes (apuracao_id)"]
+    },
+    {
+      "name": "parametros_fiscais",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "codigo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "simples_tabela",
+            "mei_regras",
+            "presumido_aliquotas",
+            "lucro_real_estimativa",
+            "limites_sublimites",
+            "reforma_tributaria"
+          ]
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "dados_json",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "vigencia_inicio",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "vigencia_fim",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "versao",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "conferido_pelo_contador",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_parametros_codigo_vigencia ON parametros_fiscais (codigo, vigencia_inicio)"
+      ]
+    },
+    {
+      "name": "documentos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "create": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "update": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "lancamento_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "titulo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "nota_fiscal_pdf",
+            "xml_nfe",
+            "das_guia",
+            "relatorio_faturamento",
+            "folha_pgto",
+            "outro"
+          ]
+        },
+        {
+          "name": "arquivo",
+          "type": "file",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "competencia",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "enviado_por_role",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["contador", "cliente"]
+        },
+        {
+          "name": "observacao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_documentos_empresa ON documentos (empresa_id)"]
+    },
+    {
+      "name": "comentarios",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "create": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "update": "@request.auth.id != '' && @request.auth.id = autor_user_id",
+        "delete": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.id = autor_user_id)"
+      },
+      "fields": [
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "lancamento_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "autor_user_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "autor_nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "autor_role",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["contador", "cliente"]
+        },
+        {
+          "name": "texto",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "lido",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_comentarios_lancamento ON comentarios (lancamento_id)"]
+    },
+    {
+      "name": "notificacoes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || destinatario_user_id = @request.auth.id || empresa_id = @request.auth.empresa_id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || destinatario_user_id = @request.auth.id || empresa_id = @request.auth.empresa_id)",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (@request.auth.role = 'contador' || destinatario_user_id = @request.auth.id || empresa_id = @request.auth.empresa_id)",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "destinatario_user_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "destinatario_role",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["contador", "cliente", "todos"]
+        },
+        {
+          "name": "titulo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "mensagem",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "faturamento_enviado",
+            "faturamento_validado",
+            "faturamento_devolvido",
+            "lembrete_prazo",
+            "alerta_limite",
+            "comentario_novo",
+            "geral"
+          ]
+        },
+        {
+          "name": "lida",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "link",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_notificacoes_destinatario ON notificacoes (destinatario_user_id, lida)"
+      ]
+    },
+    {
+      "name": "calendario_fiscal",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || @request.auth.empresa_id = empresa_id)",
+        "create": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'contador'"
+      },
+      "fields": [
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "competencia",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "obrigacao",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "data_vencimento",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["das", "dctfweb", "trimestral", "envio_faturamento", "interno"]
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["pendente", "concluido", "atrasado"]
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_calendario_vencimento ON calendario_fiscal (data_vencimento)"]
+    },
+    {
+      "name": "auditoria",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "view": "@request.auth.id != '' && @request.auth.role = 'contador'",
+        "create": "@request.auth.id != ''",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "usuario_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "usuario_nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "usuario_role",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "acao",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "LANCAMENTO_CRIADO",
+            "LANCAMENTO_ALTERADO",
+            "LANCAMENTO_VALIDADO",
+            "LANCAMENTO_DEVOLVIDO",
+            "LANCAMENTO_EXCLUIDO",
+            "ENQUADRAMENTO_ALTERADO",
+            "PARAMETRO_ALTERADO",
+            "LOGIN_SUCESSO",
+            "LOGIN_FALHA",
+            "SENHA_ALTERADA",
+            "CONSENTIMENTO_LGPD"
+          ]
+        },
+        {
+          "name": "entidade",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "entidade_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_anterior_json",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_novo_json",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "detalhes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ip_origem",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_auditoria_empresa ON auditoria (empresa_id, created DESC)"]
+    }
+  ]
+}
