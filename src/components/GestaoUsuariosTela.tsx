@@ -304,6 +304,13 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
   const handleAlternarStatus = async (u: UsuarioComEmpresa) => {
     if (!user) return
     const novoStatus = !u.ativo
+    const ehProprioUsuario = u.id === user.id
+
+    if (ehProprioUsuario && !novoStatus) {
+      setMsgErro('Você não pode desativar seu próprio acesso — peça a outro contador-chefe.')
+      return
+    }
+
     const acaoTexto = novoStatus ? 'ativar' : 'desativar'
     if (
       !confirm(
@@ -322,7 +329,7 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
       setTimeout(() => setMsgSucesso(''), 4000)
     } catch (err: unknown) {
       const errorObj = err as { message?: string }
-      alert(errorObj.message || 'Falha ao alterar status de acesso.')
+      setMsgErro(errorObj.message || 'Falha ao alterar status de acesso.')
     }
   }
 
@@ -617,6 +624,7 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
           ) : (
             <div className="divide-y divide-border">
               {usuariosFiltrados.map((u) => {
+                const ehProprioUsuario = u.id === user?.id
                 const estaBloqueado =
                   (u.failed_login_attempts && u.failed_login_attempts >= 5) ||
                   (u.locked_until && new Date(u.locked_until).getTime() > Date.now())
@@ -631,7 +639,9 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
                         ? 'bg-muted/10 opacity-75'
                         : estaBloqueado
                           ? 'bg-amber-500/5'
-                          : 'hover:bg-muted/20'
+                          : ehProprioUsuario
+                            ? 'bg-primary/[0.04] border-l-2 border-l-primary'
+                            : 'hover:bg-muted/20'
                     }`}
                   >
                     {/* Identificação e Dados Principais */}
@@ -649,6 +659,13 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-sm text-foreground">{u.name}</span>
+
+                          {/* Badge Você para o usuário logado */}
+                          {ehProprioUsuario && (
+                            <Badge className="bg-primary text-primary-foreground font-semibold text-[10px]">
+                              Você
+                            </Badge>
+                          )}
 
                           {/* Badge de Perfil */}
                           <Badge
@@ -758,9 +775,14 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
                       <Button
                         size="sm"
                         variant="outline"
+                        disabled={ehProprioUsuario}
                         onClick={() => handleAbrirRedefinir(u)}
-                        className="text-xs h-8 border-border hover:bg-muted/50 text-foreground"
-                        title="Gerar nova senha temporária"
+                        className="text-xs h-8 border-border hover:bg-muted/50 text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={
+                          ehProprioUsuario
+                            ? 'Você não pode redefinir a própria senha nesta tela — use seu perfil.'
+                            : 'Gerar nova senha temporária'
+                        }
                       >
                         <KeyRound className="w-3.5 h-3.5 mr-1 text-amber-400" />
                         Redefinir Senha
@@ -782,13 +804,20 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
                       <Button
                         size="sm"
                         variant="ghost"
+                        disabled={ehProprioUsuario && !estaDesativado}
                         onClick={() => handleAlternarStatus(u)}
-                        className={`text-xs h-8 ${
+                        className={`text-xs h-8 disabled:opacity-40 disabled:cursor-not-allowed ${
                           estaDesativado
                             ? 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10'
                             : 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10'
                         }`}
-                        title={estaDesativado ? 'Ativar acesso' : 'Desativar acesso'}
+                        title={
+                          ehProprioUsuario && !estaDesativado
+                            ? 'Você não pode desativar seu próprio acesso — peça a outro contador-chefe.'
+                            : estaDesativado
+                              ? 'Ativar acesso'
+                              : 'Desativar acesso'
+                        }
                       >
                         {estaDesativado ? (
                           <>
@@ -804,7 +833,17 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
                       </Button>
 
                       {/* Excluir Logicamente */}
-                      {u.id !== user?.id && (
+                      {ehProprioUsuario ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled
+                          className="text-muted-foreground opacity-30 cursor-not-allowed text-xs h-8 px-2"
+                          title="Você não pode excluir seu próprio acesso — peça a outro contador-chefe."
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      ) : (
                         <Button
                           size="sm"
                           variant="ghost"

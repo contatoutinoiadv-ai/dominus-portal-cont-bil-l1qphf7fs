@@ -270,6 +270,12 @@ export async function redefinirSenhaUsuario(
   currentUser: DominusUser,
   usuarioNome: string,
 ): Promise<void> {
+  if (id === currentUser.id) {
+    throw new Error(
+      'Você não pode redefinir a senha do seu próprio usuário nesta tela — use a opção de alteração de senha do seu perfil.',
+    )
+  }
+
   if (novaSenhaTemp.length < 8) {
     throw new Error('A nova senha deve possuir no mínimo 8 caracteres.')
   }
@@ -312,6 +318,10 @@ export async function alternarStatusUsuario(
   currentUser: DominusUser,
   usuarioNome: string,
 ): Promise<void> {
+  if (id === currentUser.id && !novoStatus) {
+    throw new Error('Você não pode desativar seu próprio acesso — peça a outro contador-chefe.')
+  }
+
   await pb.collection('users').update(id, {
     ativo: novoStatus,
   })
@@ -366,7 +376,7 @@ export async function excluirUsuario(
   usuarioNome: string,
 ): Promise<void> {
   if (id === currentUser.id) {
-    throw new Error('Você não pode excluir sua própria conta enquanto conectado.')
+    throw new Error('Você não pode excluir seu próprio acesso — peça a outro contador-chefe.')
   }
 
   const nowIso = new Date().toISOString()
