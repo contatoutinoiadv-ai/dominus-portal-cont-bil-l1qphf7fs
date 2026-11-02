@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,12 +10,19 @@ import {
   UploadCloud,
   CheckCircle2,
   Calendar,
-  Layers,
-  Sparkles,
   Lock,
   ArrowRight,
   RefreshCw,
   FileText,
+  ShieldCheck,
+  DollarSign,
+  TrendingUp,
+  Percent,
+  Sparkles,
+  Layers,
+  MessageCircle,
+  HelpCircle,
+  Building2,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/lib/pocketbase/authContext'
@@ -26,11 +33,20 @@ import {
   PARAMETROS_VIGENTES_PADRAO,
 } from '@/lib/taxEngine'
 import { registrarLogAuditoria } from '@/lib/pocketbase/auditService'
+import { PORTAL_CONFIG } from '@/config/portalConfig'
 
-export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVerHistorico }) => {
+interface PortalClienteProps {
+  onVerHistorico?: () => void
+  onNavegarParaSimulador?: () => void
+}
+
+export const PortalCliente: React.FC<PortalClienteProps> = ({
+  onVerHistorico,
+  onNavegarParaSimulador,
+}) => {
   const { user, empresa } = useAuth()
 
-  // Competência atual padrão (ex: mês corrente ou mês anterior)
+  // Competência atual padrão (mês corrente)
   const agora = new Date()
   const anoAtual = agora.getFullYear()
   const mesAtual = String(agora.getMonth() + 1).padStart(2, '0')
@@ -49,6 +65,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
   const [folha12mAcumulada, setFolha12mAcumulada] = useState<number>(0)
   const [salvando, setSalvando] = useState<boolean>(false)
   const [mensagemSucesso, setMensagemSucesso] = useState<string>('')
+  const [detalhesTributosAberto, setDetalhesTributosAberto] = useState<boolean>(false)
 
   // 1. Carregar Linhas de Receita da empresa
   const carregarLinhas = useCallback(async () => {
@@ -71,12 +88,11 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
     }
   }, [empresa?.id])
 
-  // 2. Carregar RBT12 e Folha 12m dos 12 meses anteriores
+  // 2. Carregar histórico anterior (RBT12 e Folha 12m)
   const carregarHistoricoAnterior = useCallback(
     async (comp: string) => {
       if (!empresa?.id) return
       try {
-        // Obter os últimos 12 meses anteriores à competência
         const [anoStr, mesStr] = comp.split('-')
         const anoNum = parseInt(anoStr, 10)
         const mesNum = parseInt(mesStr, 10)
@@ -120,7 +136,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
     [empresa?.id],
   )
 
-  // 3. Verificar se já existe lançamento para a competência selecionada
+  // 3. Verificar lançamento existente para a competência
   const checarLancamentoExistente = useCallback(
     async (comp: string) => {
       if (!empresa?.id) return
@@ -158,7 +174,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
     }
   }, [competencia, checarLancamentoExistente, carregarHistoricoAnterior])
 
-  // Cálculo imediato da estimativa em tempo real enquanto digita
+  // Cálculo imediato da estimativa em tempo real
   const calculoEstimativa: ResultadoCalculo = useMemo(() => {
     if (!empresa) {
       return {
@@ -239,10 +255,9 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
   }, [semFaturamento, valoresPorLinha])
 
   const faturamentoLiquido = Math.max(0, faturamentoTotalBruto - notasCanceladas)
-
-  // Status de bloqueio: apenas se estiver Validado o cliente não pode mais editar
   const travado = lancamentoExistente?.status === 'Validado'
 
+  // Salvar lançamento mensal
   const handleSalvarLancamento = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!empresa?.id || travado) return
@@ -268,7 +283,6 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
       let lancRecordId = lancamentoExistente?.id
 
       if (lancamentoExistente) {
-        // Atualizar
         await pb.collection('lancamentos_faturamento').update(lancamentoExistente.id, dataPayload)
         await registrarLogAuditoria({
           usuarioId: user?.id || '',
@@ -283,7 +297,6 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
           detalhes: `Receita Bruta atualizada pelo cliente para a competência ${competencia}.`,
         })
       } else {
-        // Criar novo
         const novo = await pb.collection('lancamentos_faturamento').create(dataPayload)
         lancRecordId = novo.id
         await registrarLogAuditoria({
@@ -298,7 +311,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
           detalhes: `Nova Receita Bruta mensal enviada pelo cliente para a competência ${competencia}.`,
         })
 
-        // Notificar o contador chefe em tempo real
+        // Notificar o contador responsável
         await pb.collection('notificacoes').create({
           empresa_id: empresa.id,
           destinatario_role: 'contador',
@@ -309,7 +322,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
         })
       }
 
-      // Se houver arquivo anexado, salvar em documentos
+      // Se houver arquivo anexado
       if (arquivo && lancRecordId) {
         const formData = new FormData()
         formData.append('empresa_id', empresa.id)
@@ -323,7 +336,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
         await pb.collection('documentos').create(formData)
       }
 
-      setMensagemSucesso('Receita Bruta informada com sucesso ao escritório contábil!')
+      setMensagemSucesso('Faturamento transmitido com sucesso ao seu contador!')
       checarLancamentoExistente(competencia)
     } catch (err: unknown) {
       console.error(err)
@@ -333,167 +346,351 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
     }
   }
 
-  const badgeStatus = (st?: string) => {
-    switch (st) {
-      case 'Validado':
-        return (
-          <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-            Validado pelo Contador
-          </Badge>
-        )
-      case 'Devolvido para correção':
-        return (
-          <Badge className="bg-rose-500/15 text-rose-400 border border-rose-500/30">
-            Devolvido para Correção
-          </Badge>
-        )
-      case 'Em análise':
-        return (
-          <Badge className="bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
-            Em Análise Fiscal
-          </Badge>
-        )
-      default:
-        return (
-          <Badge className="bg-amber-500/15 text-amber-400 border border-amber-500/30">
-            Enviado
-          </Badge>
-        )
-    }
+  // Nome do mês legível
+  const nomeCompetencia = useMemo(() => {
+    if (!competencia) return ''
+    const [ano, mes] = competencia.split('-')
+    const meses = [
+      'Janeiro',
+      'Fevereiro',
+      'Março',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
+    ]
+    const idx = parseInt(mes, 10) - 1
+    return `${meses[idx] || mes} de ${ano}`
+  }, [competencia])
+
+  const abrirWhatsAppSuporte = () => {
+    const msg = `Olá! Sou da empresa ${empresa?.razao_social || ''} e gostaria de orientações sobre a apuração fiscal de ${competencia}.`
+    window.open(PORTAL_CONFIG.linkWhatsAppContador(msg), '_blank', 'noopener,noreferrer')
   }
 
   return (
-    <div className="space-y-6">
-      {/* Banner de Boas-Vindas */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-card via-card/90 to-primary/5 border border-border flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <span className="text-[11px] font-mono tracking-widest text-primary uppercase font-bold">
-            Portal da Empresa
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-0.5">
-            Olá, {empresa?.razao_social || 'Empresa'}
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            CNPJ: <span className="font-mono text-foreground">{empresa?.cnpj}</span> • Regime:{' '}
-            <strong className="text-primary">{empresa?.regime_vigente}</strong>
-          </p>
-        </div>
+    <div className="space-y-8 select-none">
+      {/* --------------------------------------------------------------------- */}
+      {/* 1. HERO INSTITUCIONAL DO CLIENTE: Visão executiva no nível private    */}
+      {/* --------------------------------------------------------------------- */}
+      <div className="relative rounded-3xl p-6 sm:p-8 overflow-hidden border border-white/10 bg-gradient-to-br from-[#0c121e] via-[#080c14] to-[#05070c] shadow-2xl">
+        {/* Glows de fundo discretos */}
+        <div className="absolute -top-16 -right-16 w-80 h-80 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-20 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="flex items-center gap-3">
-          {onVerHistorico && (
-            <Button variant="outline" size="sm" onClick={onVerHistorico} className="text-xs">
-              <Calendar className="w-3.5 h-3.5 mr-1.5" />
-              Ver Histórico 24m
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[11px] font-mono font-semibold tracking-wider uppercase">
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>Painel do Empresário • Gestão Fiscal Exclusiva</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl font-light tracking-tight text-white leading-tight">
+              Olá,{' '}
+              <span className="font-semibold text-white">
+                {empresa?.nome_fantasia || empresa?.razao_social || 'Empresário'}
+              </span>
+            </h1>
+
+            <p className="text-sm text-slate-400 leading-relaxed font-normal">
+              Acompanhe sua carga tributária em tempo real e mantenha sua empresa regularizada com a
+              supervisão do seu contador.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs text-slate-400 font-mono">
+              <span>
+                CNPJ:{' '}
+                <strong className="text-slate-200">{empresa?.cnpj || 'Não cadastrado'}</strong>
+              </span>
+              <span className="text-white/20">•</span>
+              <span>
+                Regime:{' '}
+                <strong className="text-amber-400 font-sans">
+                  {empresa?.regime_vigente || 'Simples Nacional'}
+                </strong>
+              </span>
+              <span className="text-white/20">•</span>
+              <span className="text-emerald-400 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Contabilidade Conectada
+              </span>
+            </div>
+          </div>
+
+          {/* Ações Rápidas no Topo */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={abrirWhatsAppSuporte}
+              className="border-white/15 bg-white/[0.03] hover:bg-white/[0.08] hover:border-emerald-500/40 text-slate-200 hover:text-white text-xs font-semibold h-10 px-4 rounded-xl flex items-center gap-2"
+            >
+              <MessageCircle className="w-4 h-4 text-emerald-400" />
+              <span>Falar com meu contador</span>
             </Button>
-          )}
+
+            {onVerHistorico && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onVerHistorico}
+                className="border-white/15 bg-white/[0.03] hover:bg-white/[0.08] text-slate-200 hover:text-white text-xs font-semibold h-10 px-4 rounded-xl flex items-center gap-2"
+              >
+                <Calendar className="w-4 h-4 text-amber-400" />
+                <span>Histórico 24m</span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Mensagem de sucesso animada */}
       {mensagemSucesso && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-5 h-5 shrink-0" />
-            <span>{mensagemSucesso}</span>
+        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-sm flex items-center justify-between shadow-lg shadow-emerald-500/10 animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-300">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-semibold text-white">{mensagemSucesso}</p>
+              <p className="text-xs text-emerald-400/80">
+                Os dados já foram disponibilizados na fila de conferência do seu escritório.
+              </p>
+            </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setMensagemSucesso('')}
-            className="text-xs text-emerald-400"
+            className="text-xs text-emerald-400 hover:text-white hover:bg-emerald-500/20 rounded-lg"
           >
             Dispensar
           </Button>
         </div>
       )}
 
-      {/* Grid Principal: Formulário + Estimativa Imediata */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Formulário de Lançamento */}
-        <div className="lg:col-span-7 space-y-6">
-          <Card className="border-border bg-card shadow-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg font-bold flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-primary" />
-                    Informar Receita Bruta Mensal
-                  </CardTitle>
-                  <CardDescription className="text-xs text-muted-foreground">
-                    Preencha os valores de Receita Bruta da competência em menos de 1 minuto.
-                  </CardDescription>
-                </div>
-                {lancamentoExistente && badgeStatus(lancamentoExistente.status)}
-              </div>
-            </CardHeader>
+      {/* --------------------------------------------------------------------- */}
+      {/* 2. NÚMEROS DE ALTO IMPACTO (PRIVATE BANKING KPIS)                     */}
+      {/* --------------------------------------------------------------------- */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* KPI 1: Faturamento Declarado do Mês */}
+        <div className="relative rounded-2xl p-5 border border-white/10 bg-slate-900/60 backdrop-blur-md overflow-hidden group hover:border-amber-500/30 transition-all duration-300">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-xs font-mono uppercase tracking-wider text-slate-300 font-medium">
+              Faturamento do Mês
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-xs font-mono text-amber-400 font-semibold">R$</span>
+            <span className="text-3xl font-mono font-extrabold text-white tracking-tight">
+              {faturamentoTotalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-400 mt-3 pt-3 border-t border-white/5">
+            <span>Competência ativa:</span>
+            <span className="font-mono text-slate-200 font-semibold">{competencia}</span>
+          </div>
+        </div>
 
-            <CardContent>
+        {/* KPI 2: Imposto Estimado do Mês (Destaque Principal) */}
+        <div className="relative rounded-2xl p-5 border border-amber-500/30 bg-gradient-to-b from-amber-500/10 via-slate-900/70 to-slate-900/60 backdrop-blur-md overflow-hidden shadow-xl shadow-amber-500/5 group hover:border-amber-500/50 transition-all duration-300">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600" />
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-xs font-mono uppercase tracking-wider text-amber-300 font-semibold flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              Imposto Estimado do Mês
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center">
+              <Percent className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-xs font-mono text-amber-400 font-semibold">R$</span>
+            <span className="text-3xl font-mono font-black text-amber-400 tracking-tight">
+              {calculoEstimativa.impostoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-400 mt-3 pt-3 border-t border-amber-500/15">
+            <span>Alíquota Efetiva:</span>
+            <span className="font-mono text-amber-300 font-bold">
+              {rbt12Acumulado <= 0 && faturamentoTotalBruto <= 0
+                ? 'Calculando...'
+                : `${(calculoEstimativa.aliquotaEfetivaGlobal * 100).toFixed(2)}%`}
+            </span>
+          </div>
+        </div>
+
+        {/* KPI 3: Status da Apuração com o Escritório */}
+        <div className="relative rounded-2xl p-5 border border-white/10 bg-slate-900/60 backdrop-blur-md overflow-hidden group hover:border-cyan-500/30 transition-all duration-300 sm:col-span-2 lg:col-span-1">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-xs font-mono uppercase tracking-wider text-slate-300 font-medium">
+              Situação da Competência
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="mt-1">
+            {lancamentoExistente?.status === 'Validado' ? (
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xl font-bold text-emerald-400 font-sans">
+                  Apurado pelo Escritório
+                </span>
+              </div>
+            ) : lancamentoExistente ? (
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                <span className="text-xl font-bold text-amber-300 font-sans">
+                  Em Análise Contábil
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
+                <span className="text-xl font-bold text-cyan-300 font-sans">
+                  Aguardando Informação
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between text-[11px] text-slate-400 mt-3 pt-3 border-t border-white/5">
+            <span>Período:</span>
+            <span className="text-slate-200 font-medium">{nomeCompetencia || competencia}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* --------------------------------------------------------------------- */}
+      {/* 3. FLUXO PRINCIPAL: Informar Faturamento + Estimativa Instantânea      */}
+      {/* --------------------------------------------------------------------- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Formulário do Cliente: Simples, Rápido e Objetivo */}
+        <div className="lg:col-span-7 space-y-6">
+          <Card className="rounded-3xl border border-white/10 bg-slate-900/60 backdrop-blur-md shadow-2xl overflow-hidden">
+            <div className="p-6 sm:p-7 space-y-6">
+              {/* Cabeçalho do Card */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <h2 className="text-lg font-bold text-white font-heading">
+                      Informar Faturamento do Mês
+                    </h2>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Preencha o total faturado no mês. O cálculo de imposto é imediato.
+                  </p>
+                </div>
+
+                {/* Badge de status do lançamento */}
+                {lancamentoExistente && (
+                  <div>
+                    {lancamentoExistente.status === 'Validado' ? (
+                      <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-3 py-1 text-xs">
+                        Validado pelo Contador
+                      </Badge>
+                    ) : lancamentoExistente.status === 'Devolvido para correção' ? (
+                      <Badge className="bg-rose-500/15 text-rose-400 border border-rose-500/30 px-3 py-1 text-xs">
+                        Ajuste Solicitado
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-amber-500/15 text-amber-400 border border-amber-500/30 px-3 py-1 text-xs">
+                        Enviado ao Escritório
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Mensagem se o lançamento já foi validado e travado */}
               {travado && (
-                <div className="mb-4 p-3 rounded-lg bg-muted/60 border border-border text-xs flex items-center gap-2 text-muted-foreground">
+                <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-xs text-slate-300 flex items-center gap-3">
                   <Lock className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>
-                    Este lançamento de Receita Bruta já foi <strong>Validado</strong> pelo
-                    escritório e está bloqueado para edição.
+                    A competência <strong>{competencia}</strong> já foi validada e apurada pelo seu
+                    contador. Caso precise retificar algum dado, contate o escritório.
                   </span>
                 </div>
               )}
 
+              {/* Mensagem de devolução para correção */}
               {lancamentoExistente?.motivo_devolucao && (
-                <div className="mb-4 p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-1">
-                  <p className="font-semibold flex items-center gap-1.5 text-rose-400">
+                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-300 space-y-1.5">
+                  <p className="font-semibold text-rose-400 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4" />
-                    Motivo da Devolução pelo Contador:
+                    Orientação do seu contador:
                   </p>
-                  <p className="leading-relaxed">{lancamentoExistente.motivo_devolucao}</p>
+                  <p className="leading-relaxed pl-6">{lancamentoExistente.motivo_devolucao}</p>
                 </div>
               )}
 
-              <form onSubmit={handleSalvarLancamento} className="space-y-4">
-                {/* Seleção de Competência */}
+              <form onSubmit={handleSalvarLancamento} className="space-y-5">
+                {/* Seleção do Mês e Botão Sem Faturamento */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="comp-select" className="text-xs font-medium">
-                      Competência (Mês/Ano)
+                    <Label
+                      htmlFor="competencia-input"
+                      className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono"
+                    >
+                      Mês de Referência
                     </Label>
                     <Input
-                      id="comp-select"
+                      id="competencia-input"
                       type="month"
                       value={competencia}
                       onChange={(e) => setCompetencia(e.target.value)}
                       disabled={salvando}
                       required
-                      className="font-mono text-sm"
+                      className="bg-slate-950/70 border-white/10 text-white font-mono text-sm h-11 rounded-xl focus:border-amber-400 focus:ring-amber-400"
                     />
                   </div>
 
-                  {/* Botão Mês Sem Faturamento */}
                   <div className="flex flex-col justify-end">
                     <Button
                       type="button"
                       variant={semFaturamento ? 'default' : 'outline'}
                       onClick={() => setSemFaturamento(!semFaturamento)}
                       disabled={travado || salvando}
-                      className="w-full text-xs font-medium justify-center h-10"
+                      className={`h-11 rounded-xl text-xs font-semibold justify-center transition-all ${
+                        semFaturamento
+                          ? 'bg-cyan-500 text-slate-950 hover:bg-cyan-400'
+                          : 'border-white/15 bg-white/[0.02] hover:bg-white/[0.06] text-slate-300'
+                      }`}
                     >
                       {semFaturamento ? (
-                        <span className="flex items-center gap-1.5">
+                        <span className="flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4" />
-                          Mês Declarado Sem Receita Bruta
+                          Mês Declarado Sem Receita
                         </span>
                       ) : (
-                        'Declarar Mês Sem Receita Bruta (R$ 0)'
+                        'Declarar mês sem faturamento (R$ 0)'
                       )}
                     </Button>
                   </div>
                 </div>
 
+                {/* Linhas de faturamento */}
                 {!semFaturamento && (
-                  <div className="space-y-4 pt-2">
-                    <div className="border-t border-border pt-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                          Receita Bruta por Linha de Receita:
-                        </p>
-                        <span className="text-[11px] font-mono font-semibold text-primary">
+                  <div className="space-y-4 pt-1">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                          Receita Bruta do Mês:
+                        </span>
+                        <span className="text-xs font-mono font-bold text-amber-400">
                           Total: R${' '}
                           {faturamentoTotalBruto.toLocaleString('pt-BR', {
                             minimumFractionDigits: 2,
@@ -502,37 +699,35 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                       </div>
 
                       {linhasReceita.length === 0 ? (
-                        <div className="p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground">
-                          Nenhuma linha de receita ativa cadastrada para sua empresa. Contate o
-                          contador.
+                        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 text-xs text-slate-400 text-center">
+                          Nenhuma categoria de receita configurada. Fale com seu contador para
+                          cadastrar as atividades da sua empresa.
                         </div>
                       ) : (
                         linhasReceita.map((linha) => {
-                          const rotuloLinha = linha.nome_linha
-                            .toLowerCase()
-                            .includes('receita bruta')
+                          const rotulo = linha.nome_linha.toLowerCase().includes('receita')
                             ? linha.nome_linha
-                            : `Receita Bruta — ${linha.nome_linha}`
+                            : `Receita — ${linha.nome_linha}`
 
                           return (
                             <div
                               key={linha.id}
-                              className="p-3 bg-muted/20 border border-border rounded-xl mb-3 space-y-1.5"
+                              className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2 hover:border-white/20 transition"
                             >
                               <div className="flex items-center justify-between text-xs">
                                 <Label
                                   htmlFor={`linha-${linha.id}`}
-                                  className="font-semibold text-foreground cursor-pointer"
+                                  className="font-semibold text-slate-200 cursor-pointer"
                                 >
-                                  {rotuloLinha}
+                                  {rotulo}
                                 </Label>
-                                <span className="text-[10px] text-muted-foreground uppercase bg-muted px-2 py-0.5 rounded">
-                                  {linha.tipo_receita}{' '}
-                                  {linha.anexo_simples ? `• Anexo ${linha.anexo_simples}` : ''}
+                                <span className="text-[10px] font-mono text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded-md">
+                                  {linha.tipo_receita}
                                 </span>
                               </div>
+
                               <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-mono">
                                   R$
                                 </span>
                                 <Input
@@ -551,45 +746,31 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                                     const val = parseFloat(e.target.value) || 0
                                     setValoresPorLinha((prev) => ({ ...prev, [linha.id]: val }))
                                   }}
-                                  className="pl-9 font-mono text-sm"
+                                  className="pl-10 font-mono text-base bg-slate-950/80 border-white/10 text-white rounded-xl focus:border-amber-400 focus:ring-amber-400 h-11"
                                 />
                               </div>
                             </div>
                           )
                         })
                       )}
-
-                      {linhasReceita.length > 0 && (
-                        <div className="p-2.5 rounded-lg bg-muted/30 border border-border flex items-center justify-between text-xs mt-1 mb-2">
-                          <span className="text-muted-foreground font-medium">
-                            Soma da Receita Bruta do Mês:
-                          </span>
-                          <span className="font-mono font-bold text-foreground">
-                            R${' '}
-                            {faturamentoTotalBruto.toLocaleString('pt-BR', {
-                              minimumFractionDigits: 2,
-                            })}
-                          </span>
-                        </div>
-                      )}
                     </div>
 
-                    {/* Deduções e Cancelamentos */}
-                    <div className="space-y-1.5">
+                    {/* Notas canceladas ou devoluções */}
+                    <div className="space-y-1.5 pt-1">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="deducoes" className="text-xs">
-                          Notas Fiscais Canceladas ou Devoluções do Mês (R$)
+                        <Label htmlFor="canceladas-input" className="text-xs text-slate-300">
+                          Notas fiscais canceladas ou devoluções (R$)
                         </Label>
-                        <span className="text-[10px] text-muted-foreground font-medium">
-                          Informativo contábil (não deduz a base fiscal)
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          Informativo contábil
                         </span>
                       </div>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-mono">
                           R$
                         </span>
                         <Input
-                          id="deducoes"
+                          id="canceladas-input"
                           type="number"
                           step="0.01"
                           min="0"
@@ -597,32 +778,28 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                           disabled={travado || salvando}
                           value={notasCanceladas === 0 ? '' : notasCanceladas}
                           onChange={(e) => setNotasCanceladas(parseFloat(e.target.value) || 0)}
-                          className="pl-9 font-mono text-sm"
+                          className="pl-10 font-mono text-sm bg-slate-950/80 border-white/10 text-white rounded-xl focus:border-amber-400 focus:ring-amber-400"
                         />
                       </div>
-                      <p className="text-[11px] text-muted-foreground">
-                        Dado gerencial gravado no lançamento para conferência do contador. A base
-                        tributável do fisco permanece a Receita Bruta.
-                      </p>
                     </div>
 
-                    {/* Upload de Relatório/PDF/XML */}
-                    <div className="space-y-1.5">
-                      <Label htmlFor="upload-comprovante" className="text-xs">
-                        Relatório de Vendas / PDF / XML das Notas Fiscais (Opcional)
+                    {/* Anexo de relatório ou XML opcional */}
+                    <div className="space-y-1.5 pt-1">
+                      <Label htmlFor="upload-relatorio" className="text-xs text-slate-300">
+                        Extrato de faturamento ou XMLs das notas (Opcional)
                       </Label>
-                      <div className="border border-dashed border-border rounded-xl p-3 bg-muted/10 text-center hover:bg-muted/20 transition">
+                      <div className="border border-dashed border-white/15 rounded-2xl p-4 bg-white/[0.02] text-center hover:bg-white/[0.04] transition">
                         <input
-                          id="upload-comprovante"
+                          id="upload-relatorio"
                           type="file"
                           accept=".pdf,.xml,.csv,.xlsx,.zip"
                           disabled={travado || salvando}
                           onChange={(e) => setArquivo(e.target.files?.[0] || null)}
-                          className="text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:cursor-pointer"
+                          className="text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400"
                         />
                         {arquivo && (
-                          <p className="text-[11px] text-emerald-400 mt-1 flex items-center justify-center gap-1">
-                            <UploadCloud className="w-3.5 h-3.5" /> Arquivo selecionado:{' '}
+                          <p className="text-xs text-emerald-400 mt-2 flex items-center justify-center gap-1.5 font-mono">
+                            <UploadCloud className="w-3.5 h-3.5" /> Arquivo pronto para envio:{' '}
                             {arquivo.name}
                           </p>
                         )}
@@ -631,189 +808,188 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                   </div>
                 )}
 
-                {/* Observações */}
+                {/* Observações ao contador */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="obs-cliente" className="text-xs">
-                    Observações ao Contador (Opcional)
+                  <Label htmlFor="observacao-input" className="text-xs text-slate-300">
+                    Mensagem ou observação para o seu contador (Opcional)
                   </Label>
                   <Textarea
-                    id="obs-cliente"
+                    id="observacao-input"
                     rows={2}
-                    placeholder="Alguma particularidade no mês? Ex: receita com retenção de ISS, venda interestadual..."
+                    placeholder="Alguma particularidade no mês? Ex: notas com retenção de ISS, nova prestação de serviços..."
                     value={observacao}
                     disabled={travado || salvando}
                     onChange={(e) => setObservacao(e.target.value)}
-                    className="text-xs"
+                    className="text-xs bg-slate-950/80 border-white/10 text-white rounded-xl focus:border-amber-400 focus:ring-amber-400"
                   />
                 </div>
 
+                {/* Botão de Envio de Alto Padrão */}
                 {!travado && (
-                  <Button
+                  <button
                     type="submit"
                     disabled={salvando}
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold py-3 shadow-lg"
+                    className="group relative w-full h-12 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-bold text-sm tracking-wide shadow-xl shadow-amber-500/20 hover:shadow-amber-500/35 transition-all duration-300 overflow-hidden flex items-center justify-center disabled:opacity-60"
                   >
+                    <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
+
                     {salvando ? (
                       <span className="flex items-center gap-2">
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        Transmitindo ao Escritório...
+                        <span>Transmitindo ao escritório...</span>
                       </span>
                     ) : (
-                      <span className="flex items-center gap-2">
-                        Transmitir Receita Bruta de {competencia}
-                        <ArrowRight className="w-4 h-4" />
+                      <span className="relative z-10 flex items-center gap-2">
+                        <span>Transmitir Faturamento de {nomeCompetencia || competencia}</span>
+                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                       </span>
                     )}
-                  </Button>
+                  </button>
                 )}
               </form>
-            </CardContent>
+            </div>
           </Card>
         </div>
 
-        {/* Coluna Direita: Estimativa Imediata de Imposto e Aviso Legal */}
+        {/* Coluna Direita: Estimativa Fiscal em Tempo Real & Transparência Financeira */}
         <div className="lg:col-span-5 space-y-6">
-          <Card className="border-border bg-card shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-emerald-400" />
-            <CardHeader className="pb-3">
-              <span className="text-[10px] uppercase font-mono tracking-wider text-accent font-bold">
-                Motor de Cálculo em Tempo Real
-              </span>
-              <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                Estimativa Fiscal do Mês
-              </CardTitle>
-            </CardHeader>
+          <Card className="rounded-3xl border border-white/10 bg-slate-900/60 backdrop-blur-md shadow-2xl overflow-hidden relative">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-amber-400 to-amber-500" />
 
-            <CardContent className="space-y-4">
-              {/* Base de Cálculo: Receita Bruta */}
-              <div className="p-3.5 rounded-xl bg-muted/40 border border-border flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Receita Bruta (Base de Cálculo)</p>
-                  <p className="text-xl font-bold font-mono text-foreground mt-0.5">
-                    R$ {faturamentoTotalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <Badge variant="outline" className="text-[10px] font-mono">
-                  Comp. {competencia}
-                </Badge>
-              </div>
-
-              {/* Imposto Estimado Principal */}
-              <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-1">
+            <div className="p-6 sm:p-7 space-y-5">
+              <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-primary">
-                    Imposto Estimado do Mês
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold">
+                    Cálculo Imediato
                   </span>
-                  <span className="text-xs font-mono font-bold text-foreground">
-                    {rbt12Acumulado <= 0 && faturamentoTotalBruto <= 0
-                      ? 'Alíquota Efetiva: Aguardando base'
-                      : `Alíquota Efetiva: ${(calculoEstimativa.aliquotaEfetivaGlobal * 100).toFixed(2)}%`}
+                  <span className="text-[10px] font-mono text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded-full">
+                    {empresa?.regime_vigente || 'Simples Nacional'}
                   </span>
                 </div>
-                <p className="text-3xl font-extrabold font-mono text-primary">
-                  R${' '}
-                  {calculoEstimativa.impostoTotal.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                  })}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  Regime Vigente:{' '}
-                  <strong className="text-foreground">{empresa?.regime_vigente}</strong>
+                <h3 className="text-lg font-bold text-white font-heading flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  Previsão Fiscal da Empresa
+                </h3>
+              </div>
+
+              {/* Caixa Dourada: Imposto Estimado */}
+              <div className="p-5 rounded-2xl border border-amber-500/30 bg-gradient-to-b from-amber-500/15 via-amber-500/5 to-transparent space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-amber-200 font-semibold">Imposto Estimado do Mês</span>
+                  <span className="font-mono text-amber-300 font-bold">
+                    {(calculoEstimativa.aliquotaEfetivaGlobal * 100).toFixed(2)}% efetivo
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-sm font-mono text-amber-400 font-bold">R$</span>
+                  <span className="text-4xl font-mono font-black text-white tracking-tight">
+                    {calculoEstimativa.impostoTotal.toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Calculado sobre a Receita Bruta de{' '}
+                  <strong className="text-slate-200 font-mono">
+                    R$ {faturamentoTotalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </strong>
+                  .
                 </p>
               </div>
 
-              {/* Fator R (se aplicável ao Simples) */}
+              {/* Informação sobre Fator R se aplicável ao Simples */}
               {calculoEstimativa.fatorR && (
-                <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-1.5">
-                  <div className="flex items-center justify-between font-semibold">
-                    <span>Fator R (Folha 12m ÷ Receita Bruta 12m / RBT12):</span>
-                    {calculoEstimativa.fatorR.rbt12 <= 0 ? (
-                      <span className="font-mono text-muted-foreground font-normal">
-                        Sem base 12m
-                      </span>
-                    ) : (
-                      <span
-                        className={`font-mono ${
-                          calculoEstimativa.fatorR.enquadradoAnexo3
-                            ? 'text-emerald-400'
-                            : 'text-amber-400'
-                        }`}
-                      >
-                        {(calculoEstimativa.fatorR.percentual * 100).toFixed(2)}%
-                      </span>
-                    )}
+                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 text-xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-300 font-medium">Fator R da Empresa:</span>
+                    <span
+                      className={`font-mono font-bold ${
+                        calculoEstimativa.fatorR.enquadradoAnexo3
+                          ? 'text-emerald-400'
+                          : 'text-amber-400'
+                      }`}
+                    >
+                      {calculoEstimativa.fatorR.rbt12 <= 0
+                        ? 'Aguardando 12m'
+                        : `${(calculoEstimativa.fatorR.percentual * 100).toFixed(2)}%`}
+                    </span>
                   </div>
-
-                  {calculoEstimativa.fatorR.rbt12 <= 0 ? (
-                    <div className="space-y-1">
-                      <p className="text-[11px] text-amber-300 font-medium leading-relaxed">
-                        Aguardando base de Receita Bruta 12m para calcular o Fator R.
-                      </p>
-                      <p className="text-[10px] text-muted-foreground leading-relaxed">
-                        O Fator R utiliza a Receita Bruta acumulada dos últimos 12 meses anteriores
-                        (RBT12), e não apenas a receita bruta do mês informado. O enquadramento
-                        automático (Anexo III para razão &ge; 28% ou Anexo V para inferior) será
-                        definido assim que houver histórico registrado.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        {calculoEstimativa.fatorR.mensagem}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
-                        O cálculo considera a Folha de Salários 12m dividida pela Receita Bruta dos
-                        últimos 12 meses anteriores (RBT12: R${' '}
-                        {calculoEstimativa.fatorR.rbt12.toLocaleString('pt-BR', {
-                          minimumFractionDigits: 2,
-                        })}
-                        ).
-                      </p>
-                    </div>
-                  )}
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    {calculoEstimativa.fatorR.rbt12 <= 0
+                      ? 'O Fator R utiliza a média de salários e receitas dos últimos 12 meses para definir a menor alíquota permitida por lei.'
+                      : calculoEstimativa.fatorR.mensagem}
+                  </p>
                 </div>
               )}
 
-              {/* Detalhes por tributo */}
-              <div className="space-y-1.5 pt-1">
-                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5" />
-                  Composição Estimada do Tributo:
-                </p>
-                <div className="divide-y divide-border text-xs">
-                  {calculoEstimativa.detalhesTributos.length === 0 ? (
-                    <p className="py-2 text-[11px] text-muted-foreground italic">
-                      Nenhum tributo incidente para o valor atual.
-                    </p>
-                  ) : (
-                    calculoEstimativa.detalhesTributos.map((det) => (
-                      <div
-                        key={det.tributo}
-                        className="py-1.5 flex items-center justify-between font-mono"
-                      >
-                        <span className="text-foreground font-sans font-medium">{det.tributo}</span>
-                        <span className="text-muted-foreground">
-                          R$ {det.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
+              {/* Detalhamento dos tributos incidentes */}
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setDetalhesTributosAberto(!detalhesTributosAberto)}
+                  className="w-full flex items-center justify-between text-xs text-slate-300 hover:text-white p-2 rounded-xl hover:bg-white/[0.04] transition"
+                >
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                    Composição detalhada dos tributos
+                  </span>
+                  <span className="font-mono text-amber-400 text-[11px]">
+                    {detalhesTributosAberto ? 'Ocultar' : 'Ver tributos'}
+                  </span>
+                </button>
+
+                {detalhesTributosAberto && (
+                  <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2 text-xs divide-y divide-white/5 animate-in fade-in">
+                    {calculoEstimativa.detalhesTributos.length === 0 ? (
+                      <p className="text-slate-500 text-center py-2 text-[11px]">
+                        Nenhum tributo incidente para os valores atuais.
+                      </p>
+                    ) : (
+                      calculoEstimativa.detalhesTributos.map((det) => (
+                        <div
+                          key={det.tributo}
+                          className="pt-2 first:pt-0 flex items-center justify-between font-mono"
+                        >
+                          <span className="text-slate-300 font-sans font-medium">
+                            {det.tributo}
+                          </span>
+                          <span className="text-white font-bold">
+                            R$ {det.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* AVISO LEGAL MANDATÓRIO */}
-              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs flex items-start gap-2.5 leading-relaxed">
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200/90 flex items-start gap-3 leading-relaxed">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
                 <div>
-                  <strong className="font-semibold block text-amber-200">
+                  <strong className="font-semibold block text-amber-300">
                     Aviso Legal de Estimativa:
                   </strong>
                   &quot;Estimativa para planejamento. O valor oficial é apurado pelo
                   escritório.&quot;
                 </div>
               </div>
-            </CardContent>
+
+              {/* Suporte direto do contador no rodapé do cálculo */}
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center justify-between text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-slate-400" />
+                  <span>Dúvidas na apuração?</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={abrirWhatsAppSuporte}
+                  className="text-amber-400 hover:text-amber-300 font-semibold hover:underline"
+                >
+                  Falar com contador &rarr;
+                </button>
+              </div>
+            </div>
           </Card>
         </div>
       </div>

@@ -134,12 +134,12 @@ export const DominusLayout: React.FC<DominusLayoutProps> = ({
         { id: 'documentacao', label: 'Pendências e Configurações', icone: Info },
       ]
     : [
-        { id: 'portal_cliente', label: 'Início e Faturamento', icone: Building2 },
-        { id: 'dashboard_cliente', label: 'Meu Dashboard Fiscal', icone: Briefcase },
+        { id: 'portal_cliente', label: 'Visão Geral e Faturamento', icone: Building2 },
+        { id: 'dashboard_cliente', label: 'Inteligência Fiscal', icone: Briefcase },
         { id: 'historico_lancamentos', label: 'Histórico de Faturamento', icone: FileSpreadsheet },
         { id: 'documentos_cliente', label: 'Guias e Documentos', icone: CalendarDays },
         ...(empresa?.permitir_cliente_ver_comparador
-          ? [{ id: 'comparador_cliente', label: 'Simulação de Regimes', icone: Sliders }]
+          ? [{ id: 'comparador_cliente', label: 'Simulação Tributária', icone: Sliders }]
           : []),
         { id: 'documentacao', label: 'Sobre o Sistema', icone: Info },
       ]
