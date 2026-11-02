@@ -388,7 +388,7 @@ export const FilaTrabalhoContador: React.FC = () => {
                 <TableHead>Empresa / CNPJ</TableHead>
                 <TableHead>Regime</TableHead>
                 <TableHead>Competência</TableHead>
-                <TableHead>Fat. Líquido</TableHead>
+                <TableHead>Receita Bruta</TableHead>
                 <TableHead>Imposto Estimado</TableHead>
                 <TableHead>Alíquota Efetiva</TableHead>
                 <TableHead>Status</TableHead>
@@ -440,7 +440,9 @@ export const FilaTrabalhoContador: React.FC = () => {
                       <TableCell className="font-mono font-bold">{item.competencia}</TableCell>
                       <TableCell className="font-mono font-semibold">
                         R${' '}
-                        {item.total_faturamento_liquido.toLocaleString('pt-BR', {
+                        {(
+                          item.total_faturamento_bruto ?? item.total_faturamento_liquido
+                        ).toLocaleString('pt-BR', {
                           minimumFractionDigits: 2,
                         })}
                       </TableCell>
@@ -521,8 +523,12 @@ export const FilaTrabalhoContador: React.FC = () => {
                 Empresa: {empresas[itemParaDevolver?.empresa_id || '']?.razao_social}
               </p>
               <p className="text-muted-foreground font-mono">
-                Competência: {itemParaDevolver?.competencia} • Fat: R${' '}
-                {itemParaDevolver?.total_faturamento_liquido.toLocaleString('pt-BR')}
+                Competência: {itemParaDevolver?.competencia} • Receita Bruta: R${' '}
+                {(
+                  itemParaDevolver?.total_faturamento_bruto ??
+                  itemParaDevolver?.total_faturamento_liquido ??
+                  0
+                ).toLocaleString('pt-BR')}
               </p>
             </div>
 

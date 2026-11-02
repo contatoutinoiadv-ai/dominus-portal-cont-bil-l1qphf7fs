@@ -326,6 +326,72 @@ export function executarTestesMotorTributario(): {
     })
   }
 
+  // Teste 8: Base de Cálculo Exclusiva de Receita Bruta (Cancelamentos/Devoluções não deduzem base nem imposto)
+  try {
+    const inputSemCancelamento: CalculoInput = {
+      regime: 'Simples Nacional',
+      competencia: '2025-05',
+      rbt12: 300000,
+      folha12m: 100000,
+      linhas: [
+        {
+          linhaId: 'l8_sem',
+          nomeLinha: 'Desenvolvimento e Licenciamento',
+          tipoReceita: 'servicos',
+          anexoSimples: 'III',
+          valorBruto: 50000,
+          valorDeducoes: 0,
+        },
+      ],
+    }
+
+    const inputComCancelamento: CalculoInput = {
+      regime: 'Simples Nacional',
+      competencia: '2025-05',
+      rbt12: 300000,
+      folha12m: 100000,
+      linhas: [
+        {
+          linhaId: 'l8_com',
+          nomeLinha: 'Desenvolvimento e Licenciamento',
+          tipoReceita: 'servicos',
+          anexoSimples: 'III',
+          valorBruto: 50000,
+          valorDeducoes: 12000, // Cancelamentos/devoluções não devem reduzir a base do cálculo fiscal
+        },
+      ],
+    }
+
+    const resSem = calcularSimplesNacional(inputSemCancelamento, PARAMETROS_VIGENTES_PADRAO)
+    const resCom = calcularSimplesNacional(inputComCancelamento, PARAMETROS_VIGENTES_PADRAO)
+
+    // Base de cálculo tributária em todos os tributos deve ser R$ 50.000 em ambos
+    const baseIgual = resCom.detalhesTributos.every((d) => d.baseCalculo === 50000)
+    const impostoInalterado = Math.abs(resSem.impostoTotal - resCom.impostoTotal) < 0.0001
+    const aliquotaInalterada =
+      Math.abs(resSem.aliquotaEfetivaGlobal - resCom.aliquotaEfetivaGlobal) < 0.0001
+
+    // Memória de cálculo registra receitaBruta como base de cálculo
+    const passoLinha = resCom.passosMemoria.find((p) => p.titulo.includes('Linha:'))
+    const memoriaRegistrouReceitaBruta = passoLinha?.valores?.receitaBruta === 50000
+
+    const passouRegraReceitaBruta =
+      baseIgual && impostoInalterado && aliquotaInalterada && memoriaRegistrouReceitaBruta
+
+    resultados.push({
+      nome: '8. Base Fiscal = Receita Bruta (cancelamentos/devoluções não alteram base nem imposto estimado)',
+      passou: passouRegraReceitaBruta,
+      detalhes: `Imposto sem cancelamento: R$ ${resSem.impostoTotal.toFixed(2)}. Com cancelamento: R$ ${resCom.impostoTotal.toFixed(2)}. Alíquota: ${(resCom.aliquotaEfetivaGlobal * 100).toFixed(2)}%. Bases de cálculo tributos: ${resCom.detalhesTributos.map((d) => d.baseCalculo).join(', ')}.`,
+    })
+  } catch (err: unknown) {
+    const error = err as Error
+    resultados.push({
+      nome: '8. Base Fiscal = Receita Bruta',
+      passou: false,
+      detalhes: error?.message || 'Falha',
+    })
+  }
+
   const todosPassaram = resultados.every((r) => r.passou)
   return { todosPassaram, resultados }
 }

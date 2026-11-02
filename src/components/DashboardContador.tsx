@@ -65,7 +65,7 @@ export const DashboardContador: React.FC<{ onNavegarParaFila?: () => void }> = (
   const qtdPendentes = Math.max(0, totalClientes - qtdLancaram)
 
   const faturamentoTotalCarteira = lancamentosMes.reduce(
-    (acc, cur) => acc + (cur.total_faturamento_liquido || 0),
+    (acc, cur) => acc + (cur.total_faturamento_bruto ?? cur.total_faturamento_liquido ?? 0),
     0,
   )
   const impostoTotalEstimado = lancamentosMes.reduce(
@@ -82,7 +82,9 @@ export const DashboardContador: React.FC<{ onNavegarParaFila?: () => void }> = (
         nome: emp.razao_social,
         cnpj: emp.cnpj,
         regime: emp.regime_vigente,
-        faturamento: lanc?.total_faturamento_liquido || 0,
+        faturamento: lanc
+          ? (lanc.total_faturamento_bruto ?? lanc.total_faturamento_liquido ?? 0)
+          : 0,
         imposto: lanc?.imposto_estimado || 0,
       }
     })
@@ -201,7 +203,7 @@ export const DashboardContador: React.FC<{ onNavegarParaFila?: () => void }> = (
 
         <div className="p-4 rounded-xl bg-card border border-border shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground font-medium">Faturamento Consolidado</p>
+            <p className="text-xs text-muted-foreground font-medium">Receita Bruta Consolidada</p>
             <p className="text-xl font-extrabold font-mono text-primary mt-0.5 truncate max-w-[150px]">
               R$ {faturamentoTotalCarteira.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
             </p>

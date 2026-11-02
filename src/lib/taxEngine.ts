@@ -872,11 +872,13 @@ export function calcularSimplesNacional(
 
   // Processar cada linha de receita
   for (const linha of linhas) {
+    // Base tributável para o fisco = Receita Bruta da linha
+    const baseLinha = Math.max(0, linha.valorBruto)
     const liquido = Math.max(0, linha.valorBruto - (linha.valorDeducoes || 0))
     faturamentoBrutoTotal += linha.valorBruto
     faturamentoLiquidoTotal += liquido
 
-    if (liquido <= 0) continue
+    if (baseLinha <= 0) continue
 
     // Determinar anexo
     let anexoEfetivo = linha.anexoSimples || 'I'
@@ -894,9 +896,10 @@ export function calcularSimplesNacional(
 
     passos.push({
       titulo: `Linha: ${linha.nomeLinha} (Anexo ${anexoEfetivo})`,
-      descricao: `Faixa ${faixa.faixa} (limite ${faixa.limiteSuperior.toLocaleString('pt-BR')}). Alíquota nominal: ${(faixa.aliquotaNominal * 100).toFixed(2)}%, dedução: R$ ${faixa.parcelaDeduzir.toFixed(2)}.`,
+      descricao: `Faixa ${faixa.faixa} (limite ${faixa.limiteSuperior.toLocaleString('pt-BR')}). Alíquota nominal: ${(faixa.aliquotaNominal * 100).toFixed(2)}%, dedução: R$ ${faixa.parcelaDeduzir.toFixed(2)}. Base de cálculo fiscal: Receita Bruta.`,
       formula,
       valores: {
+        receitaBruta: baseLinha,
         faturamentoLiquido: liquido,
         aliquotaEfetiva: (aliquotaEfetiva * 100).toFixed(4) + '%',
       },
@@ -946,41 +949,41 @@ export function calcularSimplesNacional(
 
     const taxaTotalEfetivaLinha =
       aliquotaEfetiva * (percIrpj + percCsll + percCofins + percPis + percCpp + percIcms + percIss)
-    const impostoLinha = liquido * taxaTotalEfetivaLinha
+    const impostoLinha = baseLinha * taxaTotalEfetivaLinha
     impostoTotalGeral += impostoLinha
 
-    // Somar componentes
-    totaisTributo.IRPJ.valor += liquido * aliquotaEfetiva * percIrpj
-    totaisTributo.IRPJ.base += liquido
-    totaisTributo.CSLL.valor += liquido * aliquotaEfetiva * percCsll
-    totaisTributo.CSLL.base += liquido
-    totaisTributo.COFINS.valor += liquido * aliquotaEfetiva * percCofins
-    totaisTributo.COFINS.base += liquido
-    totaisTributo.PIS.valor += liquido * aliquotaEfetiva * percPis
-    totaisTributo.PIS.base += liquido
-    totaisTributo.CPP.valor += liquido * aliquotaEfetiva * percCpp
-    totaisTributo.CPP.base += liquido
+    // Somar componentes sobre a Receita Bruta da linha
+    totaisTributo.IRPJ.valor += baseLinha * aliquotaEfetiva * percIrpj
+    totaisTributo.IRPJ.base += baseLinha
+    totaisTributo.CSLL.valor += baseLinha * aliquotaEfetiva * percCsll
+    totaisTributo.CSLL.base += baseLinha
+    totaisTributo.COFINS.valor += baseLinha * aliquotaEfetiva * percCofins
+    totaisTributo.COFINS.base += baseLinha
+    totaisTributo.PIS.valor += baseLinha * aliquotaEfetiva * percPis
+    totaisTributo.PIS.base += baseLinha
+    totaisTributo.CPP.valor += baseLinha * aliquotaEfetiva * percCpp
+    totaisTributo.CPP.base += baseLinha
 
     if (!ultrapassouSublimite && percIcms > 0) {
-      totaisTributo.ICMS.valor += liquido * aliquotaEfetiva * percIcms
-      totaisTributo.ICMS.base += liquido
+      totaisTributo.ICMS.valor += baseLinha * aliquotaEfetiva * percIcms
+      totaisTributo.ICMS.base += baseLinha
     } else if (ultrapassouSublimite && linha.tipoReceita === 'comercio') {
       // Fora do DAS: ICMS no regime normal estadual (ex: 18%)
-      const icmsFora = liquido * params.presumido.aliquotaIcmsPadrao
+      const icmsFora = baseLinha * params.presumido.aliquotaIcmsPadrao
       totaisTributo.ICMS.valor += icmsFora
-      totaisTributo.ICMS.base += liquido
+      totaisTributo.ICMS.base += baseLinha
       impostoTotalGeral += icmsFora
     }
 
     if (!ultrapassouSublimite && percIss > 0) {
-      totaisTributo.ISS.valor += liquido * aliquotaEfetiva * percIss
-      totaisTributo.ISS.base += liquido
+      totaisTributo.ISS.valor += baseLinha * aliquotaEfetiva * percIss
+      totaisTributo.ISS.base += baseLinha
     } else if (ultrapassouSublimite && linha.tipoReceita === 'servicos') {
       // Fora do DAS: ISS municipal (ex: alíquota informada ou 5%)
       const aliqIss = linha.aliquotaMunicipalIss || 0.05
-      const issFora = liquido * aliqIss
+      const issFora = baseLinha * aliqIss
       totaisTributo.ISS.valor += issFora
-      totaisTributo.ISS.base += liquido
+      totaisTributo.ISS.base += baseLinha
       impostoTotalGeral += issFora
     }
   }
@@ -1005,7 +1008,7 @@ export function calcularSimplesNacional(
   }
 
   const aliquotaEfetivaGlobal =
-    faturamentoLiquidoTotal > 0 ? impostoTotalGeral / faturamentoLiquidoTotal : 0
+    faturamentoBrutoTotal > 0 ? impostoTotalGeral / faturamentoBrutoTotal : 0
 
   return {
     regime: 'Simples Nacional',
@@ -1106,7 +1109,7 @@ export function calcularMei(
   if (icms > 0) {
     detalhes.push({
       tributo: 'ICMS',
-      baseCalculo: faturamentoLiquidoTotal,
+      baseCalculo: faturamentoBrutoTotal,
       aliquotaNominal: 0,
       aliquotaEfetiva: 0,
       parcelaDeduzir: 0,
@@ -1119,7 +1122,7 @@ export function calcularMei(
   if (iss > 0) {
     detalhes.push({
       tributo: 'ISS',
-      baseCalculo: faturamentoLiquidoTotal,
+      baseCalculo: faturamentoBrutoTotal,
       aliquotaNominal: 0,
       aliquotaEfetiva: 0,
       parcelaDeduzir: 0,
@@ -1132,7 +1135,7 @@ export function calcularMei(
   passos.push({
     titulo: 'Apuração do DAS MEI Fixo',
     descricao: `DAS fixo mensal: INSS R$ ${inss.toFixed(2)}${icms > 0 ? ` + ICMS R$ ${icms.toFixed(2)}` : ''}${iss > 0 ? ` + ISS R$ ${iss.toFixed(2)}` : ''} = Total R$ ${totalDas.toFixed(2)}.`,
-    valores: { inss, icms, iss, totalDas },
+    valores: { inss, icms, iss, totalDas, receitaBruta: faturamentoBrutoTotal },
   })
 
   return {
@@ -1141,7 +1144,7 @@ export function calcularMei(
     faturamentoBrutoTotal,
     faturamentoLiquidoTotal,
     impostoTotal: totalDas,
-    aliquotaEfetivaGlobal: faturamentoLiquidoTotal > 0 ? totalDas / faturamentoLiquidoTotal : 0,
+    aliquotaEfetivaGlobal: faturamentoBrutoTotal > 0 ? totalDas / faturamentoBrutoTotal : 0,
     versaoParametros: params.versao,
     detalhesTributos: detalhes,
     passosMemoria: passos,
@@ -1180,13 +1183,14 @@ export function calcularLucroPresumido(
   let icmsTotal = 0
 
   for (const linha of linhas) {
+    const baseLinha = Math.max(0, linha.valorBruto)
     const liquido = Math.max(0, linha.valorBruto - (linha.valorDeducoes || 0))
     faturamentoBrutoTotal += linha.valorBruto
     faturamentoLiquidoTotal += liquido
 
-    if (liquido <= 0) continue
+    if (baseLinha <= 0) continue
 
-    // Percentual de presunção
+    // Percentual de presunção aplicado sobre a Receita Bruta da linha
     let presuncaoIrpj =
       linha.percentualPresuncaoIrpj ??
       (linha.tipoReceita === 'servicos'
@@ -1198,34 +1202,34 @@ export function calcularLucroPresumido(
         ? params.presumido.presuncaoPadraoServicos.csll
         : params.presumido.presuncaoPadraoComercio.csll)
 
-    const baseIrpjLinha = liquido * presuncaoIrpj
-    const baseCsllLinha = liquido * presuncaoCsll
+    const baseIrpjLinha = baseLinha * presuncaoIrpj
+    const baseCsllLinha = baseLinha * presuncaoCsll
 
     basePresumidaIrpjTotal += baseIrpjLinha
     basePresumidaCsllTotal += baseCsllLinha
 
-    // PIS e COFINS cumulativos mensais (0,65% e 3%)
+    // PIS e COFINS cumulativos mensais (0,65% e 3%) sobre a Receita Bruta
     if (linha.pisCofinsTratamento !== 'monofasico' && linha.localIncidenciaIss !== 'exterior') {
-      pisTotal += liquido * params.presumido.aliquotaPisCumulativo
-      cofinsTotal += liquido * params.presumido.aliquotaCofinsCumulativo
+      pisTotal += baseLinha * params.presumido.aliquotaPisCumulativo
+      cofinsTotal += baseLinha * params.presumido.aliquotaCofinsCumulativo
     }
 
-    // ISS ou ICMS
+    // ISS ou ICMS sobre a Receita Bruta
     if (linha.tipoReceita === 'servicos') {
       if (linha.localIncidenciaIss !== 'exterior' && !linha.issRetidoFonte) {
         const aliqIss = linha.aliquotaMunicipalIss ?? 0.05
-        issTotal += liquido * aliqIss
+        issTotal += baseLinha * aliqIss
       }
     } else {
       if (linha.icmsTratamento === 'tributado_normal') {
-        icmsTotal += liquido * params.presumido.aliquotaIcmsPadrao
+        icmsTotal += baseLinha * params.presumido.aliquotaIcmsPadrao
       }
     }
 
     passos.push({
       titulo: `Presunção de Bases: ${linha.nomeLinha}`,
-      descricao: `Receita R$ ${liquido.toFixed(2)}. Presunção IRPJ ${(presuncaoIrpj * 100).toFixed(1)}% = R$ ${baseIrpjLinha.toFixed(2)}. Presunção CSLL ${(presuncaoCsll * 100).toFixed(1)}% = R$ ${baseCsllLinha.toFixed(2)}.`,
-      valores: { baseIrpjLinha, baseCsllLinha },
+      descricao: `Receita Bruta R$ ${baseLinha.toFixed(2)}. Presunção IRPJ ${(presuncaoIrpj * 100).toFixed(1)}% = R$ ${baseIrpjLinha.toFixed(2)}. Presunção CSLL ${(presuncaoCsll * 100).toFixed(1)}% = R$ ${baseCsllLinha.toFixed(2)}.`,
+      valores: { baseLinha, baseIrpjLinha, baseCsllLinha },
     })
   }
 
@@ -1251,7 +1255,7 @@ export function calcularLucroPresumido(
     tributo: 'IRPJ',
     baseCalculo: basePresumidaIrpjTotal,
     aliquotaNominal: params.presumido.aliquotaIrpjBase,
-    aliquotaEfetiva: basePresumidaIrpjTotal > 0 ? irpjTotal / faturamentoLiquidoTotal : 0,
+    aliquotaEfetiva: basePresumidaIrpjTotal > 0 ? irpjTotal / faturamentoBrutoTotal : 0,
     parcelaDeduzir: 0,
     valor: irpjTotal,
     tipoRecolhimento: 'darf_federal',
@@ -1262,7 +1266,7 @@ export function calcularLucroPresumido(
     tributo: 'CSLL',
     baseCalculo: basePresumidaCsllTotal,
     aliquotaNominal: params.presumido.aliquotaCsll,
-    aliquotaEfetiva: basePresumidaCsllTotal > 0 ? csllTotal / faturamentoLiquidoTotal : 0,
+    aliquotaEfetiva: basePresumidaCsllTotal > 0 ? csllTotal / faturamentoBrutoTotal : 0,
     parcelaDeduzir: 0,
     valor: csllTotal,
     tipoRecolhimento: 'darf_federal',
@@ -1270,7 +1274,7 @@ export function calcularLucroPresumido(
 
   detalhes.push({
     tributo: 'PIS',
-    baseCalculo: faturamentoLiquidoTotal,
+    baseCalculo: faturamentoBrutoTotal,
     aliquotaNominal: params.presumido.aliquotaPisCumulativo,
     aliquotaEfetiva: params.presumido.aliquotaPisCumulativo,
     parcelaDeduzir: 0,
@@ -1280,7 +1284,7 @@ export function calcularLucroPresumido(
 
   detalhes.push({
     tributo: 'COFINS',
-    baseCalculo: faturamentoLiquidoTotal,
+    baseCalculo: faturamentoBrutoTotal,
     aliquotaNominal: params.presumido.aliquotaCofinsCumulativo,
     aliquotaEfetiva: params.presumido.aliquotaCofinsCumulativo,
     parcelaDeduzir: 0,
@@ -1291,9 +1295,9 @@ export function calcularLucroPresumido(
   if (issTotal > 0) {
     detalhes.push({
       tributo: 'ISS',
-      baseCalculo: faturamentoLiquidoTotal,
+      baseCalculo: faturamentoBrutoTotal,
       aliquotaNominal: 0.05,
-      aliquotaEfetiva: issTotal / faturamentoLiquidoTotal,
+      aliquotaEfetiva: issTotal / faturamentoBrutoTotal,
       parcelaDeduzir: 0,
       valor: issTotal,
       tipoRecolhimento: 'guia_propria_municipal',
@@ -1303,9 +1307,9 @@ export function calcularLucroPresumido(
   if (icmsTotal > 0) {
     detalhes.push({
       tributo: 'ICMS',
-      baseCalculo: faturamentoLiquidoTotal,
+      baseCalculo: faturamentoBrutoTotal,
       aliquotaNominal: params.presumido.aliquotaIcmsPadrao,
-      aliquotaEfetiva: icmsTotal / faturamentoLiquidoTotal,
+      aliquotaEfetiva: icmsTotal / faturamentoBrutoTotal,
       parcelaDeduzir: 0,
       valor: icmsTotal,
       tipoRecolhimento: 'guia_propria_estadual',
@@ -1313,8 +1317,7 @@ export function calcularLucroPresumido(
   }
 
   const impostoTotal = irpjTotal + csllTotal + pisTotal + cofinsTotal + issTotal + icmsTotal
-  const aliquotaEfetivaGlobal =
-    faturamentoLiquidoTotal > 0 ? impostoTotal / faturamentoLiquidoTotal : 0
+  const aliquotaEfetivaGlobal = faturamentoBrutoTotal > 0 ? impostoTotal / faturamentoBrutoTotal : 0
 
   return {
     regime: 'Lucro Presumido',
@@ -1359,7 +1362,7 @@ export function calcularLucroReal(
     ? params.lucroReal.margemLucroEstimadaServico
     : params.lucroReal.margemLucroEstimadaComercio
 
-  const lucroRealEstimado = faturamentoLiquidoTotal * margemLucroReal
+  const lucroRealEstimado = faturamentoBrutoTotal * margemLucroReal
   const irpjBase = lucroRealEstimado * params.presumido.aliquotaIrpjBase
   const limiteIsencaoMensal = params.presumido.limiteIsencaoAdicionalTrimestre / 3
   const excedente = Math.max(0, lucroRealEstimado - limiteIsencaoMensal)
@@ -1377,23 +1380,30 @@ export function calcularLucroReal(
     params.lucroReal.aliquotaCofinsNaoCumulativo - params.lucroReal.creditoPisCofinsEstimado * 0.8,
   )
 
-  const pisTotal = faturamentoLiquidoTotal * aliqPisLiquida
-  const cofinsTotal = faturamentoLiquidoTotal * aliqCofinsLiquida
+  const pisTotal = faturamentoBrutoTotal * aliqPisLiquida
+  const cofinsTotal = faturamentoBrutoTotal * aliqCofinsLiquida
 
   let issTotal = 0
   let icmsTotal = 0
   if (temServicos) {
-    issTotal = faturamentoLiquidoTotal * 0.05
+    issTotal = faturamentoBrutoTotal * 0.05
   } else {
-    icmsTotal = faturamentoLiquidoTotal * 0.18
+    icmsTotal = faturamentoBrutoTotal * 0.18
   }
 
   const impostoTotal = irpjTotal + csllTotal + pisTotal + cofinsTotal + issTotal + icmsTotal
 
   passos.push({
     titulo: 'Estimativa de Lucro Real (Projeção Parametrizada)',
-    descricao: `Lucro líquido projetado em ${(margemLucroReal * 100).toFixed(1)}% do faturamento = R$ ${lucroRealEstimado.toFixed(2)}. PIS/COFINS não-cumulativos estimados com crédito de ${(params.lucroReal.creditoPisCofinsEstimado * 100).toFixed(1)}%.`,
-    valores: { lucroRealEstimado, irpjTotal, csllTotal, pisTotal, cofinsTotal },
+    descricao: `Lucro líquido projetado em ${(margemLucroReal * 100).toFixed(1)}% da receita bruta = R$ ${lucroRealEstimado.toFixed(2)}. PIS/COFINS não-cumulativos estimados com crédito de ${(params.lucroReal.creditoPisCofinsEstimado * 100).toFixed(1)}%.`,
+    valores: {
+      receitaBruta: faturamentoBrutoTotal,
+      lucroRealEstimado,
+      irpjTotal,
+      csllTotal,
+      pisTotal,
+      cofinsTotal,
+    },
   })
 
   detalhes.push(
@@ -1401,7 +1411,7 @@ export function calcularLucroReal(
       tributo: 'IRPJ',
       baseCalculo: lucroRealEstimado,
       aliquotaNominal: 0.15,
-      aliquotaEfetiva: faturamentoLiquidoTotal > 0 ? irpjTotal / faturamentoLiquidoTotal : 0,
+      aliquotaEfetiva: faturamentoBrutoTotal > 0 ? irpjTotal / faturamentoBrutoTotal : 0,
       parcelaDeduzir: 0,
       valor: irpjTotal,
       tipoRecolhimento: 'darf_federal',
@@ -1410,14 +1420,14 @@ export function calcularLucroReal(
       tributo: 'CSLL',
       baseCalculo: lucroRealEstimado,
       aliquotaNominal: 0.09,
-      aliquotaEfetiva: faturamentoLiquidoTotal > 0 ? csllTotal / faturamentoLiquidoTotal : 0,
+      aliquotaEfetiva: faturamentoBrutoTotal > 0 ? csllTotal / faturamentoBrutoTotal : 0,
       parcelaDeduzir: 0,
       valor: csllTotal,
       tipoRecolhimento: 'darf_federal',
     },
     {
       tributo: 'PIS',
-      baseCalculo: faturamentoLiquidoTotal,
+      baseCalculo: faturamentoBrutoTotal,
       aliquotaNominal: params.lucroReal.aliquotaPisNaoCumulativo,
       aliquotaEfetiva: aliqPisLiquida,
       parcelaDeduzir: 0,
@@ -1426,7 +1436,7 @@ export function calcularLucroReal(
     },
     {
       tributo: 'COFINS',
-      baseCalculo: faturamentoLiquidoTotal,
+      baseCalculo: faturamentoBrutoTotal,
       aliquotaNominal: params.lucroReal.aliquotaCofinsNaoCumulativo,
       aliquotaEfetiva: aliqCofinsLiquida,
       parcelaDeduzir: 0,
@@ -1438,7 +1448,7 @@ export function calcularLucroReal(
   if (issTotal > 0)
     detalhes.push({
       tributo: 'ISS',
-      baseCalculo: faturamentoLiquidoTotal,
+      baseCalculo: faturamentoBrutoTotal,
       aliquotaNominal: 0.05,
       aliquotaEfetiva: 0.05,
       parcelaDeduzir: 0,
@@ -1448,7 +1458,7 @@ export function calcularLucroReal(
   if (icmsTotal > 0)
     detalhes.push({
       tributo: 'ICMS',
-      baseCalculo: faturamentoLiquidoTotal,
+      baseCalculo: faturamentoBrutoTotal,
       aliquotaNominal: 0.18,
       aliquotaEfetiva: 0.18,
       parcelaDeduzir: 0,
@@ -1462,7 +1472,7 @@ export function calcularLucroReal(
     faturamentoBrutoTotal,
     faturamentoLiquidoTotal,
     impostoTotal,
-    aliquotaEfetivaGlobal: faturamentoLiquidoTotal > 0 ? impostoTotal / faturamentoLiquidoTotal : 0,
+    aliquotaEfetivaGlobal: faturamentoBrutoTotal > 0 ? impostoTotal / faturamentoBrutoTotal : 0,
     versaoParametros: params.versao,
     detalhesTributos: detalhes,
     passosMemoria: passos,

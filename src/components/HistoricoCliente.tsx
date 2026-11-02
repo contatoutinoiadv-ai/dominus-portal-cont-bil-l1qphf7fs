@@ -51,7 +51,7 @@ export const HistoricoCliente: React.FC = () => {
 
   const dadosGrafico = [...lancamentos].reverse().map((l) => ({
     competencia: l.competencia,
-    faturamento: l.total_faturamento_liquido,
+    faturamento: l.total_faturamento_bruto ?? l.total_faturamento_liquido,
     imposto: l.imposto_estimado || 0,
   }))
 
@@ -104,10 +104,10 @@ export const HistoricoCliente: React.FC = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-primary" />
-            Evolução de Faturamento dos Últimos Meses
+            Evolução de Receita Bruta dos Últimos Meses
           </CardTitle>
           <CardDescription className="text-xs">
-            Comparativo de faturamento líquido e imposto apurado por competência.
+            Comparativo de receita bruta e imposto apurado por competência.
           </CardDescription>
         </CardHeader>
         <CardContent className="h-64 pt-2">
@@ -147,7 +147,7 @@ export const HistoricoCliente: React.FC = () => {
                 <Area
                   type="monotone"
                   dataKey="faturamento"
-                  name="Faturamento Líquido"
+                  name="Receita Bruta"
                   stroke="#eab308"
                   fillOpacity={1}
                   fill="url(#corFaturamento)"
@@ -171,8 +171,8 @@ export const HistoricoCliente: React.FC = () => {
             <TableHeader>
               <TableRow className="text-xs">
                 <TableHead>Competência</TableHead>
-                <TableHead>Faturamento Bruto</TableHead>
-                <TableHead>Deduções</TableHead>
+                <TableHead>Receita Bruta (Base)</TableHead>
+                <TableHead>Canceladas/Devoluções (Info)</TableHead>
                 <TableHead>Faturamento Líquido</TableHead>
                 <TableHead>Imposto Estimado</TableHead>
                 <TableHead>Alíquota Efetiva</TableHead>
@@ -210,9 +210,11 @@ export const HistoricoCliente: React.FC = () => {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="font-semibold text-primary">
                       R${' '}
-                      {item.total_faturamento_bruto.toLocaleString('pt-BR', {
+                      {(
+                        item.total_faturamento_bruto ?? item.total_faturamento_liquido
+                      ).toLocaleString('pt-BR', {
                         minimumFractionDigits: 2,
                       })}
                     </TableCell>
@@ -222,7 +224,7 @@ export const HistoricoCliente: React.FC = () => {
                         minimumFractionDigits: 2,
                       })}
                     </TableCell>
-                    <TableCell className="font-semibold text-primary">
+                    <TableCell className="text-muted-foreground">
                       R${' '}
                       {item.total_faturamento_liquido.toLocaleString('pt-BR', {
                         minimumFractionDigits: 2,

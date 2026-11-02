@@ -50,21 +50,22 @@ export const DashboardCliente: React.FC = () => {
 
   // Lançamento mais recente
   const lancamentoAtual = lancamentos[0]
-  const faturamentoMes = lancamentoAtual?.total_faturamento_liquido || 0
+  const faturamentoMes =
+    lancamentoAtual?.total_faturamento_bruto ?? lancamentoAtual?.total_faturamento_liquido ?? 0
   const impostoMes = lancamentoAtual?.imposto_estimado || 0
   const aliquotaEfetiva = (lancamentoAtual?.aliquota_efetiva || 0) * 100
 
   // Acumulado do ano (2025)
   const lancamentosAno = lancamentos.filter((l) => l.competencia.startsWith('2025'))
   const faturamentoAcumuladoAno = lancamentosAno.reduce(
-    (acc, l) => acc + (l.total_faturamento_liquido || 0),
+    (acc, l) => acc + (l.total_faturamento_bruto ?? l.total_faturamento_liquido ?? 0),
     0,
   )
 
-  // RBT12 Acumulado (últimos 12 meses)
+  // RBT12 Acumulado (últimos 12 meses) - Receita Bruta Total
   const rbt12 = lancamentos
     .slice(0, 12)
-    .reduce((acc, l) => acc + (l.total_faturamento_liquido || 0), 0)
+    .reduce((acc, l) => acc + (l.total_faturamento_bruto ?? l.total_faturamento_liquido ?? 0), 0)
 
   // Medidor do Teto Anual
   const limiteAnual =
@@ -89,7 +90,7 @@ export const DashboardCliente: React.FC = () => {
     .slice(-12)
     .map((l) => ({
       competencia: l.competencia,
-      faturamento: l.total_faturamento_liquido,
+      faturamento: l.total_faturamento_bruto ?? l.total_faturamento_liquido,
       imposto: l.imposto_estimado || 0,
     }))
 
@@ -134,10 +135,10 @@ export const DashboardCliente: React.FC = () => {
 
       {/* Cartões Indicadores Animados */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Faturamento do Mês */}
+        {/* Receita Bruta do Mês */}
         <div className="p-4 rounded-xl bg-card border border-border shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground font-medium">Faturamento do Mês</p>
+            <p className="text-xs text-muted-foreground font-medium">Receita Bruta do Mês</p>
             <p className="text-2xl font-extrabold font-mono text-foreground mt-0.5">
               R$ {faturamentoMes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
@@ -153,7 +154,7 @@ export const DashboardCliente: React.FC = () => {
         {/* Acumulado do Ano */}
         <div className="p-4 rounded-xl bg-card border border-border shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground font-medium">Acumulado do Ano (2025)</p>
+            <p className="text-xs text-muted-foreground font-medium">Receita Bruta do Ano (2025)</p>
             <p className="text-2xl font-extrabold font-mono text-foreground mt-0.5">
               R$ {faturamentoAcumuladoAno.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
@@ -202,7 +203,7 @@ export const DashboardCliente: React.FC = () => {
           <Card className="border-border bg-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold">
-                Evolução do Faturamento Líquido (Últimos 12 Meses)
+                Evolução da Receita Bruta (Últimos 12 Meses)
               </CardTitle>
               <CardDescription className="text-xs">
                 Valores apurados mês a mês para planejamento financeiro e tributário.
@@ -236,7 +237,7 @@ export const DashboardCliente: React.FC = () => {
                   <Area
                     type="monotone"
                     dataKey="faturamento"
-                    name="Faturamento Líquido"
+                    name="Receita Bruta"
                     stroke="#eab308"
                     fill="url(#areaClientFat)"
                   />
@@ -394,10 +395,13 @@ export const DashboardCliente: React.FC = () => {
                         )}
                       </div>
                       <p className="text-[11px] text-muted-foreground font-mono">
-                        Fat. Líquido: R${' '}
-                        {l.total_faturamento_liquido.toLocaleString('pt-BR', {
-                          minimumFractionDigits: 2,
-                        })}
+                        Receita Bruta: R${' '}
+                        {(l.total_faturamento_bruto ?? l.total_faturamento_liquido).toLocaleString(
+                          'pt-BR',
+                          {
+                            minimumFractionDigits: 2,
+                          },
+                        )}
                       </p>
                     </div>
 

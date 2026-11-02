@@ -303,7 +303,7 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
           empresa_id: empresa.id,
           destinatario_role: 'contador',
           titulo: 'Novo Faturamento Recebido',
-          mensagem: `A empresa ${empresa.razao_social} enviou o faturamento de ${competencia} no valor líquido de R$ ${faturamentoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
+          mensagem: `A empresa ${empresa.razao_social} enviou o faturamento de ${competencia} com receita bruta de R$ ${faturamentoTotalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
           tipo: 'faturamento_enviado',
           lida: false,
         })
@@ -542,9 +542,14 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
 
                     {/* Deduções e Cancelamentos */}
                     <div className="space-y-1.5">
-                      <Label htmlFor="deducoes" className="text-xs">
-                        Notas Fiscais Canceladas ou Devoluções do Mês (R$)
-                      </Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="deducoes" className="text-xs">
+                          Notas Fiscais Canceladas ou Devoluções do Mês (R$)
+                        </Label>
+                        <span className="text-[10px] text-muted-foreground font-medium">
+                          Informativo contábil (não deduz a base fiscal)
+                        </span>
+                      </div>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">
                           R$
@@ -561,6 +566,10 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                           className="pl-9 font-mono text-sm"
                         />
                       </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Dado gerencial gravado no lançamento para conferência do contador. A base
+                        tributável do fisco permanece a Receita Bruta.
+                      </p>
                     </div>
 
                     {/* Upload de Relatório/PDF/XML */}
@@ -643,12 +652,12 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {/* Valor do Faturamento Líquido */}
+              {/* Base de Cálculo: Receita Bruta */}
               <div className="p-3.5 rounded-xl bg-muted/40 border border-border flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Faturamento Líquido Apurado</p>
+                  <p className="text-xs text-muted-foreground">Receita Bruta</p>
                   <p className="text-xl font-bold font-mono text-foreground mt-0.5">
-                    R$ {faturamentoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {faturamentoTotalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
                 <Badge variant="outline" className="text-[10px] font-mono">
