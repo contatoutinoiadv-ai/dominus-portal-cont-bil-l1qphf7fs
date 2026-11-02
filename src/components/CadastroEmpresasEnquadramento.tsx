@@ -816,7 +816,7 @@ export const CadastroEmpresasEnquadramento: React.FC = () => {
                   className="rounded border-border text-primary"
                 />
                 <label htmlFor="fator-r-check" className="font-semibold cursor-pointer">
-                  Sujeito ao Fator R (Razão folha 12m / RBT12 &ge; 28%)
+                  Sujeito ao Fator R (Razão Folha 12m ÷ Receita Bruta 12m / RBT12 &ge; 28%)
                 </label>
               </div>
               <p className="text-[11px] text-muted-foreground pl-5">

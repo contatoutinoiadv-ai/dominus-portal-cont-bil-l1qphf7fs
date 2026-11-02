@@ -672,7 +672,9 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
                     Imposto Estimado do Mês
                   </span>
                   <span className="text-xs font-mono font-bold text-foreground">
-                    Alíquota Efetiva: {(calculoEstimativa.aliquotaEfetivaGlobal * 100).toFixed(2)}%
+                    {rbt12Acumulado <= 0 && faturamentoTotalBruto <= 0
+                      ? 'Alíquota Efetiva: Aguardando base'
+                      : `Alíquota Efetiva: ${(calculoEstimativa.aliquotaEfetivaGlobal * 100).toFixed(2)}%`}
                   </span>
                 </div>
                 <p className="text-3xl font-extrabold font-mono text-primary">
@@ -689,22 +691,53 @@ export const PortalCliente: React.FC<{ onVerHistorico?: () => void }> = ({ onVer
 
               {/* Fator R (se aplicável ao Simples) */}
               {calculoEstimativa.fatorR && (
-                <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-1">
+                <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-1.5">
                   <div className="flex items-center justify-between font-semibold">
-                    <span>Fator R (Folha 12m / RBT12):</span>
-                    <span
-                      className={`font-mono ${
-                        calculoEstimativa.fatorR.enquadradoAnexo3
-                          ? 'text-emerald-400'
-                          : 'text-amber-400'
-                      }`}
-                    >
-                      {(calculoEstimativa.fatorR.percentual * 100).toFixed(2)}%
-                    </span>
+                    <span>Fator R (Folha 12m ÷ Receita Bruta 12m / RBT12):</span>
+                    {calculoEstimativa.fatorR.rbt12 <= 0 ? (
+                      <span className="font-mono text-muted-foreground font-normal">
+                        Sem base 12m
+                      </span>
+                    ) : (
+                      <span
+                        className={`font-mono ${
+                          calculoEstimativa.fatorR.enquadradoAnexo3
+                            ? 'text-emerald-400'
+                            : 'text-amber-400'
+                        }`}
+                      >
+                        {(calculoEstimativa.fatorR.percentual * 100).toFixed(2)}%
+                      </span>
+                    )}
                   </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    {calculoEstimativa.fatorR.mensagem}
-                  </p>
+
+                  {calculoEstimativa.fatorR.rbt12 <= 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-[11px] text-amber-300 font-medium leading-relaxed">
+                        Aguardando base de Receita Bruta 12m para calcular o Fator R.
+                      </p>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        O Fator R utiliza a Receita Bruta acumulada dos últimos 12 meses anteriores
+                        (RBT12), e não apenas o faturamento do mês informado. O enquadramento
+                        automático (Anexo III para razão &ge; 28% ou Anexo V para inferior) será
+                        definido assim que houver histórico registrado.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        {calculoEstimativa.fatorR.mensagem}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                        O cálculo considera a Folha de Salários 12m dividida pela Receita Bruta dos
+                        últimos 12 meses anteriores (RBT12: R${' '}
+                        {calculoEstimativa.fatorR.rbt12.toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                        })}
+                        ).
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

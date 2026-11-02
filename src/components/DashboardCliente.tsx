@@ -272,7 +272,7 @@ export const DashboardCliente: React.FC = () => {
 
                 <div className="text-center text-xs space-y-0.5 pt-1">
                   <p className="text-muted-foreground">
-                    RBT12:{' '}
+                    Receita Bruta 12m (RBT12):{' '}
                     <strong className="font-mono text-foreground">
                       R$ {rbt12.toLocaleString('pt-BR')}
                     </strong>

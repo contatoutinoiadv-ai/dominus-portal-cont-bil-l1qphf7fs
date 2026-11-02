@@ -181,7 +181,7 @@ Regime Atual: ${empresaSelecionada?.regime_vigente || 'N/A'}
 
 CENARIO SIMULADO:
 - Faturamento Mensal: R$ ${faturamentoSimulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-- RBT12 Projetado: R$ ${rbt12Simulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+- Receita Bruta 12m (RBT12 Projetado): R$ ${rbt12Simulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 - Folha 12m Projetada: R$ ${folha12mSimulada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 
 COMPARATIVO DE CARGA TRIBUTARIA:
@@ -299,7 +299,7 @@ Justificativa Tecnica: ${comparativo.justificativa}
 
           <div className="space-y-1">
             <Label className="text-[11px] font-semibold text-muted-foreground">
-              RBT12 Acumulado (R$):
+              Receita Bruta 12m / RBT12 Acumulado (R$):
             </Label>
             <Input
               type="number"

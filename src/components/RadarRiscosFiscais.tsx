@@ -55,7 +55,7 @@ export const RadarRiscosFiscais: React.FC = () => {
               empresa: emp,
               tipoRisco: 'limite_teto',
               titulo: 'Risco Crítico de Exclusão do Simples',
-              descricao: `RBT12 de R$ ${soma12m.toLocaleString('pt-BR')} atingiu ${percTeto.toFixed(1)}% do teto anual de R$ ${teto.toLocaleString('pt-BR')}.`,
+              descricao: `Receita Bruta 12m (RBT12) de R$ ${soma12m.toLocaleString('pt-BR')} atingiu ${percTeto.toFixed(1)}% do teto anual de R$ ${teto.toLocaleString('pt-BR')}.`,
               nivel: 'critico',
               valorAtual: `${percTeto.toFixed(1)}% do teto`,
             })
@@ -64,7 +64,7 @@ export const RadarRiscosFiscais: React.FC = () => {
               empresa: emp,
               tipoRisco: 'limite_teto',
               titulo: 'Aproximação do Teto do Simples Nacional',
-              descricao: `RBT12 em ${percTeto.toFixed(1)}% do limite máximo de faturamento anual.`,
+              descricao: `Receita Bruta 12m (RBT12) em ${percTeto.toFixed(1)}% do limite máximo de faturamento anual.`,
               nivel: 'alerta',
               valorAtual: `${percTeto.toFixed(1)}% do teto`,
             })
@@ -75,7 +75,7 @@ export const RadarRiscosFiscais: React.FC = () => {
               empresa: emp,
               tipoRisco: 'sublimite',
               titulo: 'Sublimite Estadual Ultrapassado',
-              descricao: `RBT12 ultrapassou o sublimite de R$ ${sub.toLocaleString('pt-BR')}. ICMS e ISS devem ser recolhidos fora do DAS.`,
+              descricao: `Receita Bruta 12m (RBT12) ultrapassou o sublimite de R$ ${sub.toLocaleString('pt-BR')}. ICMS e ISS devem ser recolhidos fora do DAS.`,
               nivel: 'critico',
               valorAtual: `R$ ${soma12m.toLocaleString('pt-BR')}`,
             })
