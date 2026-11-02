@@ -57,9 +57,16 @@ export const TrilhaAuditoria: React.FC = () => {
         </Badge>
       )
     }
-    if (acao.includes('EXCLUIDO')) {
+    if (acao.includes('EXCLUIDO') || acao.includes('DESATIVADO')) {
       return (
         <Badge className="bg-rose-500/15 text-rose-400 border border-rose-500/30 text-[9px]">
+          {acao}
+        </Badge>
+      )
+    }
+    if (acao.includes('DESBLOQUEADO') || acao.includes('ATIVADO') || acao.includes('REDEFINIDA')) {
+      return (
+        <Badge className="bg-purple-500/15 text-purple-400 border border-purple-500/30 text-[9px]">
           {acao}
         </Badge>
       )

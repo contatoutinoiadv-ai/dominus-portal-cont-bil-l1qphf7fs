@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T16:14:15.628Z",
+  "generatedAt": "2026-11-02T21:49:03.424Z",
   "collections": [
     {
       "name": "users",
@@ -7,9 +7,9 @@
       "apiRules": {
         "list": "@request.auth.id != '' && (@request.auth.role = 'contador' || id = @request.auth.id)",
         "view": "@request.auth.id != '' && (@request.auth.role = 'contador' || id = @request.auth.id)",
-        "create": "",
+        "create": "@request.auth.id != '' && @request.auth.role = 'contador'",
         "update": "@request.auth.id != '' && (@request.auth.role = 'contador' || id = @request.auth.id)",
-        "delete": "id = @request.auth.id"
+        "delete": "@request.auth.id != '' && (@request.auth.role = 'contador' || id = @request.auth.id)"
       },
       "fields": [
         {
@@ -77,6 +77,36 @@
         },
         {
           "name": "locked_until",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cargo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "telefone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "observacoes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "deleted_at",
           "type": "text",
           "required": false,
           "system": false
@@ -1434,25 +1464,6 @@
           "system": false
         },
         {
-          "name": "acao",
-          "type": "select",
-          "required": true,
-          "system": false,
-          "selectValues": [
-            "LANCAMENTO_CRIADO",
-            "LANCAMENTO_ALTERADO",
-            "LANCAMENTO_VALIDADO",
-            "LANCAMENTO_DEVOLVIDO",
-            "LANCAMENTO_EXCLUIDO",
-            "ENQUADRAMENTO_ALTERADO",
-            "PARAMETRO_ALTERADO",
-            "LOGIN_SUCESSO",
-            "LOGIN_FALHA",
-            "SENHA_ALTERADA",
-            "CONSENTIMENTO_LGPD"
-          ]
-        },
-        {
           "name": "entidade",
           "type": "text",
           "required": true,
@@ -1501,6 +1512,32 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "acao",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "LANCAMENTO_CRIADO",
+            "LANCAMENTO_ALTERADO",
+            "LANCAMENTO_VALIDADO",
+            "LANCAMENTO_DEVOLVIDO",
+            "LANCAMENTO_EXCLUIDO",
+            "ENQUADRAMENTO_ALTERADO",
+            "PARAMETRO_ALTERADO",
+            "LOGIN_SUCESSO",
+            "LOGIN_FALHA",
+            "SENHA_ALTERADA",
+            "CONSENTIMENTO_LGPD",
+            "USUARIO_CRIADO",
+            "USUARIO_ALTERADO",
+            "USUARIO_EXCLUIDO",
+            "USUARIO_DESATIVADO",
+            "USUARIO_ATIVADO",
+            "USUARIO_DESBLOQUEADO",
+            "SENHA_REDEFINIDA"
+          ]
         }
       ],
       "indexes": ["CREATE INDEX idx_auditoria_empresa ON auditoria (empresa_id, created DESC)"]

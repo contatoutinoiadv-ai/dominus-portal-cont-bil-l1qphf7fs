@@ -1,22 +1,31 @@
 import pb from './client'
 
+export type AcaoAuditoria =
+  | 'LANCAMENTO_CRIADO'
+  | 'LANCAMENTO_ALTERADO'
+  | 'LANCAMENTO_VALIDADO'
+  | 'LANCAMENTO_DEVOLVIDO'
+  | 'LANCAMENTO_EXCLUIDO'
+  | 'ENQUADRAMENTO_ALTERADO'
+  | 'PARAMETRO_ALTERADO'
+  | 'LOGIN_SUCESSO'
+  | 'LOGIN_FALHA'
+  | 'SENHA_ALTERADA'
+  | 'CONSENTIMENTO_LGPD'
+  | 'USUARIO_CRIADO'
+  | 'USUARIO_ALTERADO'
+  | 'USUARIO_EXCLUIDO'
+  | 'USUARIO_DESATIVADO'
+  | 'USUARIO_ATIVADO'
+  | 'USUARIO_DESBLOQUEADO'
+  | 'SENHA_REDEFINIDA'
+
 export async function registrarLogAuditoria(params: {
   usuarioId: string
   usuarioNome: string
   usuarioRole: string
   empresaId?: string
-  acao:
-    | 'LANCAMENTO_CRIADO'
-    | 'LANCAMENTO_ALTERADO'
-    | 'LANCAMENTO_VALIDADO'
-    | 'LANCAMENTO_DEVOLVIDO'
-    | 'LANCAMENTO_EXCLUIDO'
-    | 'ENQUADRAMENTO_ALTERADO'
-    | 'PARAMETRO_ALTERADO'
-    | 'LOGIN_SUCESSO'
-    | 'LOGIN_FALHA'
-    | 'SENHA_ALTERADA'
-    | 'CONSENTIMENTO_LGPD'
+  acao: AcaoAuditoria
   entidade: string
   entidadeId?: string
   valorAnterior?: unknown

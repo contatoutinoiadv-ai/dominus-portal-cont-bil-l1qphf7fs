@@ -53,6 +53,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         must_change_password: !!rec.must_change_password,
         lgpd_accepted: !!rec.lgpd_accepted,
         lgpd_accepted_at: rec.lgpd_accepted_at,
+        failed_login_attempts: rec.failed_login_attempts,
+        locked_until: rec.locked_until,
+        ativo: rec.ativo !== false,
+        cargo: rec.cargo,
+        telefone: rec.telefone,
+        observacoes: rec.observacoes,
+        deleted_at: rec.deleted_at,
         created: rec.created,
         updated: rec.updated,
       }
@@ -110,6 +117,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem(storageKey)
 
       const rec = authData.record
+
+      // Verificar se o usuário está excluído logicamente ou desativado
+      if (rec.deleted_at) {
+        pb.authStore.clear()
+        return {
+          success: false,
+          error:
+            'Esta conta de usuário foi excluída. Entre em contato com a administração contábil.',
+        }
+      }
+
+      if (rec.ativo === false) {
+        pb.authStore.clear()
+        return {
+          success: false,
+          error: 'Seu acesso foi desativado pelo escritório contábil. Contate seu contador.',
+        }
+      }
+
+      // Verificar bloqueio no banco de dados (locked_until)
+      if (rec.locked_until) {
+        const lockedTime = new Date(rec.locked_until).getTime()
+        if (lockedTime > Date.now()) {
+          pb.authStore.clear()
+          const minRestantes = Math.max(1, Math.ceil((lockedTime - Date.now()) / 60000))
+          return {
+            success: false,
+            locked: true,
+            error: `Conta bloqueada após tentativas incorretas. Aguarde ${minRestantes} minuto(s) ou solicite o desbloqueio ao seu contador.`,
+          }
+        }
+      }
+
       const dominusUser: DominusUser = {
         id: rec.id,
         email: rec.email,
@@ -120,6 +160,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         must_change_password: !!rec.must_change_password,
         lgpd_accepted: !!rec.lgpd_accepted,
         lgpd_accepted_at: rec.lgpd_accepted_at,
+        failed_login_attempts: rec.failed_login_attempts,
+        locked_until: rec.locked_until,
+        ativo: rec.ativo !== false,
+        cargo: rec.cargo,
+        telefone: rec.telefone,
+        observacoes: rec.observacoes,
+        deleted_at: rec.deleted_at,
         created: rec.created,
         updated: rec.updated,
       }

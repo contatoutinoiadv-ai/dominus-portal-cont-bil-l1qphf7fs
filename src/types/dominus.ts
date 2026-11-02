@@ -16,6 +16,11 @@ export interface DominusUser {
   lgpd_accepted_at?: string
   failed_login_attempts?: number
   locked_until?: string
+  ativo?: boolean
+  cargo?: string
+  telefone?: string
+  observacoes?: string
+  deleted_at?: string
   created: string
   updated: string
 }

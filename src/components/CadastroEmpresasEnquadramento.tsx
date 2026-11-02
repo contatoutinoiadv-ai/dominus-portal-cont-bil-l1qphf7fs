@@ -22,13 +22,21 @@ import {
   CheckCircle2,
   Layers,
   Calendar,
+  Users,
+  UserPlus,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/lib/pocketbase/authContext'
 import { Empresa, EnquadramentoFiscal, LinhaReceita, RegimeTributario } from '@/types/dominus'
 import { registrarLogAuditoria } from '@/lib/pocketbase/auditService'
 
-export const CadastroEmpresasEnquadramento: React.FC = () => {
+interface CadastroEmpresasProps {
+  onNavegarParaUsuariosEmpresa?: (empresaId: string) => void
+}
+
+export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
+  onNavegarParaUsuariosEmpresa,
+}) => {
   const { user } = useAuth()
   const [empresas, setEmpresas] = useState<Empresa[]>([])
   const [empresaSelecionada, setEmpresaSelecionada] = useState<Empresa | null>(null)
@@ -407,16 +415,30 @@ export const CadastroEmpresasEnquadramento: React.FC = () => {
                       • Aberta em: {empresaSelecionada.data_abertura}
                     </CardDescription>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setModalDuplicarAberta(true)}
-                    className="text-xs"
-                    title="Duplicar regras para outra empresa"
-                  >
-                    <Copy className="w-3.5 h-3.5 mr-1.5" />
-                    Duplicar Enquadramento
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {onNavegarParaUsuariosEmpresa && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onNavegarParaUsuariosEmpresa(empresaSelecionada.id)}
+                        className="text-xs border-primary/30 text-primary hover:bg-primary/10"
+                        title="Gerenciar usuários e logins desta empresa"
+                      >
+                        <Users className="w-3.5 h-3.5 mr-1.5" />
+                        Logins do Cliente
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setModalDuplicarAberta(true)}
+                      className="text-xs"
+                      title="Duplicar regras para outra empresa"
+                    >
+                      <Copy className="w-3.5 h-3.5 mr-1.5" />
+                      Duplicar Enquadramento
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs border-t border-border pt-3">
                   <div>

@@ -16,12 +16,14 @@ import { ParametrosFiscaisTela } from '@/components/ParametrosFiscaisTela'
 import { DiagnosticoFiscalTela } from '@/components/DiagnosticoFiscalTela'
 import { TelaDocumentacaoPendencias } from '@/components/TelaDocumentacaoPendencias'
 import { VozDaDominusTela } from '@/components/VozDaDominusTela'
+import { GestaoUsuariosTela } from '@/components/GestaoUsuariosTela'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export const Index: React.FC = () => {
   const { user, isLoading, isContador } = useAuth()
   const [telaAtiva, setTelaAtiva] = useState<string>('')
   const [termoBuscaGlobal, setTermoBuscaGlobal] = useState<string>('')
+  const [empresaFiltroUsuarios, setEmpresaFiltroUsuarios] = useState<string>('')
 
   // Definir tela inicial padrão conforme perfil
   const telaEfetiva = telaAtiva || (isContador ? 'dashboard_contador' : 'portal_cliente')
@@ -59,11 +61,27 @@ export const Index: React.FC = () => {
       {telaEfetiva === 'dashboard_contador' && (
         <DashboardContador onNavegarParaFila={() => setTelaAtiva('fila_trabalho')} />
       )}
+      {telaEfetiva === 'gestao_usuarios' && (
+        <GestaoUsuariosTela
+          empresaFiltroInicialId={empresaFiltroUsuarios}
+          onVoltarParaCadastroEmpresas={() => {
+            setEmpresaFiltroUsuarios('')
+            setTelaAtiva('cadastro_empresas')
+          }}
+        />
+      )}
       {(telaEfetiva === 'diagnostico_fiscal' || telaEfetiva === 'comparador_regimes') && (
         <DiagnosticoFiscalTela />
       )}
       {telaEfetiva === 'fila_trabalho' && <FilaTrabalhoContador />}
-      {telaEfetiva === 'cadastro_empresas' && <CadastroEmpresasEnquadramento />}
+      {telaEfetiva === 'cadastro_empresas' && (
+        <CadastroEmpresasEnquadramento
+          onNavegarParaUsuariosEmpresa={(empresaId) => {
+            setEmpresaFiltroUsuarios(empresaId)
+            setTelaAtiva('gestao_usuarios')
+          }}
+        />
+      )}
       {telaEfetiva === 'radar_riscos' && <RadarRiscosFiscais />}
       {telaEfetiva === 'parametros_fiscais' && <ParametrosFiscaisTela />}
       {telaEfetiva === 'calendario_fiscal' && <CalendarioFiscal />}

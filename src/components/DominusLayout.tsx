@@ -19,6 +19,8 @@ import {
   CheckCircle,
   Sparkles,
   LineChart,
+  Users,
+  UserPlus,
 } from 'lucide-react'
 import { useAuth } from '@/lib/pocketbase/authContext'
 import { Button } from '@/components/ui/button'
@@ -132,6 +134,7 @@ export const DominusLayout: React.FC<DominusLayoutProps> = ({
   const itensMenu = isContador
     ? [
         { id: 'dashboard_contador', label: 'Painel Geral da Carteira', icone: Briefcase },
+        { id: 'gestao_usuarios', label: 'Equipe e Acessos', icone: Users },
         { id: 'diagnostico_fiscal', label: 'Inteligência Fiscal', icone: LineChart },
         { id: 'fila_trabalho', label: 'Fila de Lançamentos', icone: FileSpreadsheet },
         { id: 'radar_riscos', label: 'Radar de Riscos Fiscais', icone: Layers },
@@ -311,13 +314,22 @@ export const DominusLayout: React.FC<DominusLayoutProps> = ({
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {isContador && (
-                <DropdownMenuItem
-                  onClick={() => setTelaAtiva('voz_dominus')}
-                  className="text-xs cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5 mr-2 text-amber-400" />
-                  Voz da Dominus (Apresentação)
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem
+                    onClick={() => setTelaAtiva('gestao_usuarios')}
+                    className="text-xs cursor-pointer"
+                  >
+                    <Users className="w-3.5 h-3.5 mr-2 text-primary" />
+                    Equipe e Acessos (Logins)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setTelaAtiva('voz_dominus')}
+                    className="text-xs cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 mr-2 text-amber-400" />
+                    Voz da Dominus (Apresentação)
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuItem
                 onClick={() => setTelaAtiva('documentacao')}
