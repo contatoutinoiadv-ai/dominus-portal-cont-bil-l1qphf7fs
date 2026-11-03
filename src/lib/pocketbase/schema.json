@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T21:57:36.705Z",
+  "generatedAt": "2026-11-03T16:17:59.805Z",
   "collections": [
     {
       "name": "users",
@@ -149,19 +149,19 @@
         {
           "name": "municipio",
           "type": "text",
-          "required": true,
+          "required": false,
           "system": false
         },
         {
           "name": "uf",
           "type": "text",
-          "required": true,
+          "required": false,
           "system": false
         },
         {
           "name": "email_responsavel",
           "type": "email",
-          "required": true,
+          "required": false,
           "system": false
         },
         {
@@ -284,7 +284,7 @@
         {
           "name": "tipo_atividade",
           "type": "select",
-          "required": true,
+          "required": false,
           "system": false,
           "selectValues": ["servicos", "comercio", "industria", "mista"]
         },

@@ -28,7 +28,7 @@ export async function testarFluxoAtivacaoDesativacaoDemo(): Promise<{
     const loginBloqueadoPeloContexto = authDataDesativado.record.ativo === false
     pb.authStore.clear()
     detalhes.push(
-      `Tentativa de login com usuário desativado: status ativo no registro = ${authDataDesativado.record.ativo}. Bloqueio pelo portal: ${loginBloqueadoPeloContexto}`
+      `Tentativa de login com usuário desativado: status ativo no registro = ${authDataDesativado.record.ativo}. Bloqueio pelo portal: ${loginBloqueadoPeloContexto}`,
     )
 
     // 4. Reativar o usuário (como o botão "Ativar" faz)
@@ -40,7 +40,7 @@ export async function testarFluxoAtivacaoDesativacaoDemo(): Promise<{
     const loginPermitido = authDataReativado.record.ativo === true
     pb.authStore.clear()
     detalhes.push(
-      `Tentativa de login com usuário reativado: status ativo = ${authDataReativado.record.ativo}. Acesso liberado: ${loginPermitido}`
+      `Tentativa de login com usuário reativado: status ativo = ${authDataReativado.record.ativo}. Acesso liberado: ${loginPermitido}`,
     )
 
     // 6. Devolver usuário de demonstração ao seu estado original caso fosse false
