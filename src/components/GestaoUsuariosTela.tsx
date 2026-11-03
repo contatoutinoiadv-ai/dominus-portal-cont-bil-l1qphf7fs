@@ -127,7 +127,10 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
     try {
       const [usersList, empList] = await Promise.all([
         listarUsuarios(false),
-        pb.collection('empresas').getFullList({ sort: 'razao_social' }),
+        pb.collection('empresas').getFullList({
+          sort: 'razao_social',
+          filter: "deleted_at = '' || deleted_at = null",
+        }),
       ])
       setUsuarios(usersList)
       setEmpresas(empList as unknown as Empresa[])

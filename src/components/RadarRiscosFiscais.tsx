@@ -39,7 +39,9 @@ export const RadarRiscosFiscais: React.FC = () => {
   const analisarRiscos = useCallback(async () => {
     setCarregando(true)
     try {
-      const empresasRes = await pb.collection('empresas').getList(1, 100)
+      const empresasRes = await pb.collection('empresas').getList(1, 100, {
+        filter: "deleted_at = '' || deleted_at = null",
+      })
       const lancamentosRes = await pb.collection('lancamentos_faturamento').getList(1, 200, {
         sort: '-competencia',
       })

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-03T16:17:59.805Z",
+  "generatedAt": "2026-11-03T17:38:25.634Z",
   "collections": [
     {
       "name": "users",
@@ -1536,7 +1536,10 @@
             "USUARIO_DESATIVADO",
             "USUARIO_ATIVADO",
             "USUARIO_DESBLOQUEADO",
-            "SENHA_REDEFINIDA"
+            "SENHA_REDEFINIDA",
+            "EMPRESA_CRIADA",
+            "EMPRESA_ALTERADA",
+            "EMPRESA_EXCLUIDA"
           ]
         }
       ],

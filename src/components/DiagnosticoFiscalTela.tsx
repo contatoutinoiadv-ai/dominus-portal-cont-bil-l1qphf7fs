@@ -53,7 +53,10 @@ export const DiagnosticoFiscalTela: React.FC = () => {
   const carregarEmpresas = useCallback(async () => {
     try {
       if (isContador) {
-        const res = await pb.collection('empresas').getList(1, 100, { sort: 'razao_social' })
+        const res = await pb.collection('empresas').getList(1, 100, {
+          sort: 'razao_social',
+          filter: "deleted_at = '' || deleted_at = null",
+        })
         const itens = res.items as unknown as Empresa[]
         setEmpresas(itens)
         if (itens.length > 0 && !empresaSelecionada) {

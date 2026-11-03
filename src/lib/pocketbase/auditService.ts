@@ -19,6 +19,9 @@ export type AcaoAuditoria =
   | 'USUARIO_ATIVADO'
   | 'USUARIO_DESBLOQUEADO'
   | 'SENHA_REDEFINIDA'
+  | 'EMPRESA_CRIADA'
+  | 'EMPRESA_ALTERADA'
+  | 'EMPRESA_EXCLUIDA'
 
 export async function registrarLogAuditoria(params: {
   usuarioId: string

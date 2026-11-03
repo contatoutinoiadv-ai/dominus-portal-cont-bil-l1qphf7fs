@@ -64,7 +64,9 @@ export const FilaTrabalhoContador: React.FC = () => {
   // Carregar empresas para indexação
   const carregarEmpresas = useCallback(async () => {
     try {
-      const res = await pb.collection('empresas').getList(1, 100)
+      const res = await pb.collection('empresas').getList(1, 100, {
+        filter: "deleted_at = '' || deleted_at = null",
+      })
       const map: Record<string, Empresa> = {}
       res.items.forEach((e) => {
         map[e.id] = e as unknown as Empresa

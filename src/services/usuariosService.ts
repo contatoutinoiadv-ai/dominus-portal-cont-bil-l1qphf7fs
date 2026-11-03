@@ -52,6 +52,7 @@ export async function listarUsuarios(incluirExcluidos = false): Promise<UsuarioC
   let empresasMap: Record<string, { razao_social: string; cnpj: string }> = {}
   try {
     const empresas = await pb.collection('empresas').getFullList({
+      filter: "deleted_at = '' || deleted_at = null",
       fields: 'id,razao_social,cnpj',
     })
     empresasMap = empresas.reduce(

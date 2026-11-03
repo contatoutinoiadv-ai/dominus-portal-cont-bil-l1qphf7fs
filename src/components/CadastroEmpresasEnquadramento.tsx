@@ -24,11 +24,23 @@ import {
   Calendar,
   Users,
   UserPlus,
+  Pencil,
+  Phone,
+  Mail,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/lib/pocketbase/authContext'
 import { Empresa, EnquadramentoFiscal, LinhaReceita, RegimeTributario } from '@/types/dominus'
 import { registrarLogAuditoria } from '@/lib/pocketbase/auditService'
+import { ModalEdicaoEmpresa } from '@/components/empresas/ModalEdicaoEmpresa'
+import { ModalExcluirEmpresa } from '@/components/empresas/ModalExcluirEmpresa'
+import {
+  FILTRO_EMPRESAS_NAO_EXCLUIDAS,
+  erroCnpjDuplicado,
+  salvarEdicaoEmpresa,
+} from '@/services/empresasService'
+import type { DadosEdicaoEmpresa } from '@/services/empresasService'
+import { formatarCnpj } from '@/lib/cnpj'
 
 interface CadastroEmpresasProps {
   onNavegarParaUsuariosEmpresa?: (empresaId: string) => void
@@ -49,6 +61,11 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
   const [modalNovaLinhaAberta, setModalNovaLinhaAberta] = useState(false)
   const [modalDuplicarAberta, setModalDuplicarAberta] = useState(false)
   const [empresaDestinoDuplicar, setEmpresaDestinoDuplicar] = useState<string>('')
+
+  // Edição e exclusão do cadastro da empresa
+  const [modalEdicaoAberta, setModalEdicaoAberta] = useState(false)
+  const [modalExclusaoAberta, setModalExclusaoAberta] = useState(false)
+  const [excluindo, setExcluindo] = useState(false)
 
   // Formulário Nova Empresa
   const [novaEmpresa, setNovaEmpresa] = useState({
@@ -94,18 +111,20 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
     try {
       const res = await pb.collection('empresas').getList(1, 100, {
         sort: 'razao_social',
+        filter: FILTRO_EMPRESAS_NAO_EXCLUIDAS,
       })
       const itens = res.items as unknown as Empresa[]
       setEmpresas(itens)
-      if (itens.length > 0 && !empresaSelecionada) {
-        setEmpresaSelecionada(itens[0])
-      }
+      setEmpresaSelecionada((atual) => {
+        if (atual && itens.some((e) => e.id === atual.id)) return atual
+        return itens[0] ?? null
+      })
     } catch (e) {
       console.warn('Erro ao carregar empresas:', e)
     } finally {
       setCarregando(false)
     }
-  }, [empresaSelecionada])
+  }, [])
 
   const carregarDetalhesEmpresa = useCallback(async (empresaId: string) => {
     try {
@@ -181,18 +200,61 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
         usuarioNome: user?.name || 'Contador',
         usuarioRole: 'contador',
         empresaId: nova.id,
-        acao: 'ENQUADRAMENTO_ALTERADO',
+        acao: 'EMPRESA_CRIADA',
         entidade: 'empresas',
         entidadeId: nova.id,
-        detalhes: `Cadastro da empresa ${novaEmpresa.razao_social} e enquadramento em ${novaEmpresa.regime_vigente}`,
+        detalhes: `Empresa ${novaEmpresa.razao_social} (CNPJ ${novaEmpresa.cnpj}) cadastrada no sistema, com enquadramento inicial em ${novaEmpresa.regime_vigente}.`,
       })
 
       setModalNovaEmpresaAberta(false)
-      carregarEmpresas()
+      await carregarEmpresas()
+      setEmpresaSelecionada(nova as unknown as Empresa)
       alert('Empresa cadastrada com sucesso!')
     } catch (err) {
       console.error(err)
-      alert('Erro ao cadastrar empresa. Verifique se o CNPJ é único.')
+      alert(
+        erroCnpjDuplicado(err)
+          ? 'Já existe uma empresa cadastrada com este CNPJ.'
+          : 'Erro ao cadastrar empresa. Verifique se o CNPJ é único.',
+      )
+    }
+  }
+
+  // Salvar Edição do Cadastro da Empresa
+  const handleSalvarEdicaoEmpresa = async (dados: DadosEdicaoEmpresa): Promise<string | null> => {
+    if (!empresaSelecionada || !user) return 'Selecione uma empresa antes de salvar.'
+    try {
+      const { atualizada, semAlteracoes } = await salvarEdicaoEmpresa(
+        empresaSelecionada,
+        dados,
+        user,
+      )
+      setEmpresaSelecionada(atualizada)
+      setModalEdicaoAberta(false)
+      if (!semAlteracoes) {
+        alert('Cadastro atualizado com sucesso. A alteração foi registrada na Trilha de Auditoria.')
+      }
+      return null
+    } catch (err) {
+      console.error(err)
+      if (erroCnpjDuplicado(err)) {
+        return 'Já existe outra empresa cadastrada com este CNPJ. Verifique o número informado.'
+      }
+      return 'Não foi possível salvar as alterações do cadastro. Verifique os dados e tente novamente.'
+    }
+  }
+
+  // Excluir Empresa (exclusão lógica, com auditoria gravada pelo serviço)
+  const handleEmpresaExcluida = async (empresa: Empresa) => {
+    setExcluindo(true)
+    try {
+      setEmpresaSelecionada(null)
+      await carregarEmpresas()
+      alert(
+        `A empresa ${empresa.razao_social} foi excluída do sistema. Lançamentos e apurações permanecem preservados e a ação está registrada na Trilha de Auditoria.`,
+      )
+    } finally {
+      setExcluindo(false)
     }
   }
 
@@ -360,14 +422,23 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
             <CardContent className="p-2 space-y-1.5 max-h-[600px] overflow-y-auto">
               {carregando ? (
                 <p className="text-xs text-muted-foreground p-3">Carregando carteira...</p>
+              ) : empresas.length === 0 ? (
+                <p className="text-xs text-muted-foreground p-3">
+                  Nenhuma empresa na carteira. Cadastre a primeira empresa para começar.
+                </p>
               ) : (
                 empresas.map((emp) => {
                   const sel = empresaSelecionada?.id === emp.id
                   return (
-                    <button
+                    <div
                       key={emp.id}
                       onClick={() => setEmpresaSelecionada(emp)}
-                      className={`w-full text-left p-3 rounded-xl border transition ${
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') setEmpresaSelecionada(emp)
+                      }}
+                      className={`w-full text-left p-3 rounded-xl border transition cursor-pointer ${
                         sel
                           ? 'bg-primary/10 border-primary shadow-sm text-foreground'
                           : 'bg-muted/15 border-border hover:bg-muted/40 text-muted-foreground'
@@ -385,9 +456,44 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
                         {emp.cnpj}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
-                        {emp.municipio}/{emp.uf}
+                        {emp.municipio
+                          ? `${emp.municipio}/${emp.uf}`
+                          : 'Município pendente de cadastro'}
                       </p>
-                    </button>
+                      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-border/60">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEmpresaSelecionada(emp)
+                              setModalEdicaoAberta(true)
+                            }}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold border border-primary/30 text-primary hover:bg-primary/10 transition"
+                            title="Editar cadastro desta empresa"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEmpresaSelecionada(emp)
+                              setModalExclusaoAberta(true)
+                            }}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 transition"
+                            title="Excluir esta empresa do sistema"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Excluir
+                          </button>
+                        </div>
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-wide">
+                          Ações
+                        </span>
+                      </div>
+                    </div>
                   )
                 })
               )}
@@ -412,7 +518,7 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
                       <strong className="font-mono text-foreground">
                         {empresaSelecionada.cnpj}
                       </strong>{' '}
-                      • Aberta em: {empresaSelecionada.data_abertura}
+                      • Aberta em: {empresaSelecionada.data_abertura || '—'}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
@@ -428,6 +534,26 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
                         Logins do Cliente
                       </Button>
                     )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setModalEdicaoAberta(true)}
+                      className="text-xs border-primary/30 text-primary hover:bg-primary/10 font-semibold"
+                      title="Editar os dados cadastrais desta empresa"
+                    >
+                      <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                      Editar Cadastro
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setModalExclusaoAberta(true)}
+                      className="text-xs border-rose-500/30 text-rose-400 hover:bg-rose-500/10 font-semibold"
+                      title="Excluir esta empresa do sistema"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                      Excluir Empresa
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -471,14 +597,23 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
                       Município / UF
                     </span>
                     <span>
-                      {empresaSelecionada.municipio} - {empresaSelecionada.uf}
+                      {empresaSelecionada.municipio || empresaSelecionada.uf
+                        ? `${empresaSelecionada.municipio || '—'} - ${empresaSelecionada.uf || '—'}`
+                        : 'Pendente de cadastro'}
                     </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground block text-[10px] uppercase">
                       Contato Responsável
                     </span>
-                    <span className="truncate block">{empresaSelecionada.email_responsavel}</span>
+                    <span className="truncate block flex items-center gap-1">
+                      <Mail className="w-3 h-3 shrink-0 text-muted-foreground" />
+                      {empresaSelecionada.email_responsavel || 'E-mail pendente de cadastro'}
+                    </span>
+                    <span className="truncate block flex items-center gap-1 mt-0.5">
+                      <Phone className="w-3 h-3 shrink-0 text-muted-foreground" />
+                      {empresaSelecionada.telefone_responsavel || 'Telefone pendente de cadastro'}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -919,6 +1054,25 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
         </DialogContent>
       </Dialog>
 
+      {/* Modal Edição do Cadastro da Empresa */}
+      {empresaSelecionada && (
+        <ModalEdicaoEmpresa
+          aberto={modalEdicaoAberta}
+          empresa={empresaSelecionada}
+          onFechar={() => setModalEdicaoAberta(false)}
+          onSalvar={handleSalvarEdicaoEmpresa}
+        />
+      )}
+
+      {/* Modal Exclusão da Empresa */}
+      <ModalExcluirEmpresa
+        aberto={modalExclusaoAberta}
+        empresa={empresaSelecionada}
+        onFechar={() => setModalExclusaoAberta(false)}
+        onExcluida={handleEmpresaExcluida}
+        usuario={{ id: user?.id, name: user?.name }}
+      />
+
       {/* Modal Duplicar Enquadramento */}
       <Dialog open={modalDuplicarAberta} onOpenChange={setModalDuplicarAberta}>
         <DialogContent className="max-w-md bg-card border-border text-foreground">
@@ -943,7 +1097,7 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
               >
                 <option value="">Selecione uma empresa...</option>
                 {empresas
-                  .filter((e) => e.id !== empresaSelecionada?.id)
+                  .filter((e) => e.id !== empresaSelecionada?.id && !e.deleted_at)
                   .map((e) => (
                     <option key={e.id} value={e.id}>
                       {e.razao_social} ({e.cnpj})

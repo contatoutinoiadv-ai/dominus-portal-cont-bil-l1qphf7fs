@@ -41,7 +41,9 @@ export const DashboardContador: React.FC<{ onNavegarParaFila?: () => void }> = (
   const carregarDados = useCallback(async () => {
     setCarregando(true)
     try {
-      const empRes = await pb.collection('empresas').getList(1, 100)
+      const empRes = await pb.collection('empresas').getList(1, 100, {
+        filter: "deleted_at = '' || deleted_at = null",
+      })
       const lancRes = await pb.collection('lancamentos_faturamento').getList(1, 200, {
         sort: '-competencia',
       })

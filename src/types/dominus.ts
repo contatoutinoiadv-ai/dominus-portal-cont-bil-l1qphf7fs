@@ -46,6 +46,7 @@ export interface Empresa {
   permitir_cliente_ver_diagnostico?: boolean
   percentual_alerta_diagnostico?: number
   status_ativa?: boolean
+  deleted_at?: string
   created: string
   updated: string
 }
