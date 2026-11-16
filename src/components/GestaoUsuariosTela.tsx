@@ -33,6 +33,7 @@ import {
   Copy,
   Mail,
   Phone,
+  AtSign,
 } from 'lucide-react'
 import { useAuth } from '@/lib/pocketbase/authContext'
 import pb from '@/lib/pocketbase/client'
@@ -76,6 +77,7 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
   const [formEquipe, setFormEquipe] = useState({
     name: '',
     email: '',
+    username: '',
     password: '',
     cargo: '',
     telefone: '',
@@ -87,6 +89,7 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
   const [formCliente, setFormCliente] = useState({
     name: '',
     email: '',
+    username: '',
     password: '',
     empresa_id: empresaFiltroInicialId || '',
     telefone: '',
@@ -100,6 +103,7 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
   const [formEdicao, setFormEdicao] = useState({
     name: '',
     email: '',
+    username: '',
     telefone: '',
     cargo: '',
     observacoes: '',
@@ -161,6 +165,7 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
     setFormEquipe({
       name: '',
       email: '',
+      username: '',
       password: gerarSenhaAleatoria(),
       cargo: 'Analista Fiscal / Contábil',
       telefone: '',
@@ -175,6 +180,7 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
     setFormCliente({
       name: '',
       email: '',
+      username: '',
       password: gerarSenhaAleatoria(),
       empresa_id: empresaIdPredefinida || filtroEmpresa || (empresas[0]?.id ?? ''),
       telefone: '',
@@ -192,6 +198,7 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
     setFormEdicao({
       name: u.name,
       email: u.email,
+      username: u.username || '',
       telefone: u.telefone || '',
       cargo: u.cargo || '',
       observacoes: u.observacoes || '',
@@ -261,6 +268,7 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
         {
           name: formEdicao.name,
           email: formEdicao.email,
+          username: formEdicao.username,
           telefone: formEdicao.telefone,
           cargo: formEdicao.cargo,
           observacoes: formEdicao.observacoes,
@@ -403,12 +411,13 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
     // Filtro por busca textual
     if (busca.trim()) {
       const termo = busca.toLowerCase().trim()
-      const matchNome = u.name.toLowerCase().includes(termo)
-      const matchEmail = u.email.toLowerCase().includes(termo)
+      const matchNome = (u.name || '').toLowerCase().includes(termo)
+      const matchEmail = (u.email || '').toLowerCase().includes(termo)
+      const matchUsername = (u.username || '').toLowerCase().includes(termo)
       const matchCargo = (u.cargo || '').toLowerCase().includes(termo)
       const matchEmpresa = (u.empresa_nome || '').toLowerCase().includes(termo)
       const matchCnpj = (u.empresa_cnpj || '').includes(termo)
-      return matchNome || matchEmail || matchCargo || matchEmpresa || matchCnpj
+      return matchNome || matchEmail || matchUsername || matchCargo || matchEmpresa || matchCnpj
     }
 
     return true
@@ -713,10 +722,18 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
 
                         {/* Contatos */}
                         <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                          <span className="flex items-center gap-1 text-foreground/80">
-                            <Mail className="w-3 h-3 text-muted-foreground" />
-                            {u.email}
-                          </span>
+                          {u.username && (
+                            <span className="flex items-center gap-1 text-foreground/80">
+                              <AtSign className="w-3 h-3 text-muted-foreground" />
+                              {u.username}
+                            </span>
+                          )}
+                          {u.email && (
+                            <span className="flex items-center gap-1 text-foreground/80">
+                              <Mail className="w-3 h-3 text-muted-foreground" />
+                              {u.email}
+                            </span>
+                          )}
                           {u.telefone && (
                             <span className="flex items-center gap-1">
                               <Phone className="w-3 h-3 text-muted-foreground" />
@@ -893,16 +910,29 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
               />
             </div>
 
-            <div className="space-y-1">
-              <Label>E-mail Corporativo (Login de Acesso) *</Label>
-              <Input
-                type="email"
-                required
-                placeholder="beatriz@dominuscontabil.com.br"
-                value={formEquipe.email}
-                onChange={(e) => setFormEquipe({ ...formEquipe, email: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Usuário (Login de Acesso)</Label>
+                <Input
+                  placeholder="ex: beatriz.lima"
+                  value={formEquipe.username}
+                  onChange={(e) => setFormEquipe({ ...formEquipe, username: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>E-mail (opcional)</Label>
+                <Input
+                  type="email"
+                  placeholder="beatriz@dominuscontabil.com.br"
+                  value={formEquipe.email}
+                  onChange={(e) => setFormEquipe({ ...formEquipe, email: e.target.value })}
+                />
+              </div>
             </div>
+
+            <p className="text-[10px] text-muted-foreground">
+              Informe ao menos um: usuário OU e-mail. O login aceita os dois.
+            </p>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -1024,16 +1054,29 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
               />
             </div>
 
-            <div className="space-y-1">
-              <Label>E-mail de Login do Cliente *</Label>
-              <Input
-                type="email"
-                required
-                placeholder="joao@empresa.com.br"
-                value={formCliente.email}
-                onChange={(e) => setFormCliente({ ...formCliente, email: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Usuário (Login de Acesso)</Label>
+                <Input
+                  placeholder="ex: joao.silva"
+                  value={formCliente.username}
+                  onChange={(e) => setFormCliente({ ...formCliente, username: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>E-mail (opcional)</Label>
+                <Input
+                  type="email"
+                  placeholder="joao@empresa.com.br"
+                  value={formCliente.email}
+                  onChange={(e) => setFormCliente({ ...formCliente, email: e.target.value })}
+                />
+              </div>
             </div>
+
+            <p className="text-[10px] text-muted-foreground">
+              Informe ao menos um: usuário OU e-mail. O login aceita os dois.
+            </p>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -1125,7 +1168,7 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
               Editar Dados de Usuário
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Atualize nome, e-mail, telefone, cargo ou empresa vinculada.
+              Atualize nome, usuário, e-mail, telefone, cargo ou empresa vinculada.
             </DialogDescription>
           </DialogHeader>
 
@@ -1140,15 +1183,27 @@ export const GestaoUsuariosTela: React.FC<GestaoUsuariosTelaProps> = ({
                 />
               </div>
 
-              <div className="space-y-1">
-                <Label>E-mail de Acesso *</Label>
-                <Input
-                  type="email"
-                  required
-                  value={formEdicao.email}
-                  onChange={(e) => setFormEdicao({ ...formEdicao, email: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Usuário (Login de Acesso)</Label>
+                  <Input
+                    value={formEdicao.username}
+                    onChange={(e) => setFormEdicao({ ...formEdicao, username: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>E-mail (opcional)</Label>
+                  <Input
+                    type="email"
+                    value={formEdicao.email}
+                    onChange={(e) => setFormEdicao({ ...formEdicao, email: e.target.value })}
+                  />
+                </div>
               </div>
+
+              <p className="text-[10px] text-muted-foreground">
+                Informe ao menos um: usuário OU e-mail. O login aceita os dois.
+              </p>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">

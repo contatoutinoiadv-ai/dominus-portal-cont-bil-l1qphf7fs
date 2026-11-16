@@ -27,7 +27,7 @@ interface TelaLoginProps {
 
 export const TelaLogin: React.FC<TelaLoginProps> = ({ onSuccess }) => {
   const { login } = useAuth()
-  const [email, setEmail] = useState('')
+  const [identificacao, setIdentificacao] = useState('')
   const [senha, setSenha] = useState('')
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const [carregando, setCarregando] = useState(false)
@@ -46,7 +46,7 @@ export const TelaLogin: React.FC<TelaLoginProps> = ({ onSuccess }) => {
     setErro('')
     setCarregando(true)
 
-    const res = await login(email, senha)
+    const res = await login(identificacao, senha)
     setCarregando(false)
 
     if (res.success) {
@@ -60,7 +60,7 @@ export const TelaLogin: React.FC<TelaLoginProps> = ({ onSuccess }) => {
   }
 
   const preencherDemo = (demoEmail: string) => {
-    setEmail(demoEmail)
+    setIdentificacao(demoEmail)
     setSenha('Skip@Pass')
     setErro('')
   }
@@ -305,10 +305,10 @@ export const TelaLogin: React.FC<TelaLoginProps> = ({ onSuccess }) => {
               >
                 <input
                   id="email-input"
-                  type="email"
-                  value={email}
+                  type="text"
+                  value={identificacao}
                   disabled={carregando || bloqueado}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setIdentificacao(e.target.value)}
                   onFocus={() => setEmailFocado(true)}
                   onBlur={() => setEmailFocado(false)}
                   required
@@ -318,12 +318,14 @@ export const TelaLogin: React.FC<TelaLoginProps> = ({ onSuccess }) => {
                 <label
                   htmlFor="email-input"
                   className={`absolute left-4 transition-all duration-200 pointer-events-none text-xs ${
-                    emailFocado || email
+                    emailFocado || identificacao
                       ? 'top-1.5 text-[10px] text-amber-400 font-medium'
                       : 'top-3.5 text-xs text-slate-400'
                   }`}
                 >
-                  {modoEscritorio ? 'E-mail do Contador' : 'E-mail cadastrado da empresa'}
+                  {modoEscritorio
+                    ? 'Usuário ou e-mail do contador'
+                    : 'Usuário ou e-mail cadastrado da empresa'}
                 </label>
               </div>
             </div>

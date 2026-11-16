@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-16T13:18:18.897Z",
+  "generatedAt": "2026-11-16T13:33:46.711Z",
   "collections": [
     {
       "name": "users",
@@ -110,11 +110,18 @@
           "type": "text",
           "required": false,
           "system": false
+        },
+        {
+          "name": "username",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
-        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''",
+        "CREATE UNIQUE INDEX `idx_users_username_unique` ON `users` (`username`) WHERE `username` != ''"
       ]
     },
     {

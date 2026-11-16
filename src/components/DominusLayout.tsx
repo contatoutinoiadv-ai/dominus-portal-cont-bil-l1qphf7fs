@@ -310,7 +310,10 @@ export const DominusLayout: React.FC<DominusLayoutProps> = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-card border-border">
               <DropdownMenuLabel className="font-normal text-xs text-muted-foreground">
-                Conectado como <strong className="text-foreground">{user?.email}</strong>
+                Conectado como{' '}
+                <strong className="text-foreground">
+                  {user?.email || user?.username || user?.name}
+                </strong>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {isContador && (

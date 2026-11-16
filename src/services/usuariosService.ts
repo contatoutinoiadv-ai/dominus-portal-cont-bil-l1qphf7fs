@@ -1,400 +1,405 @@
 import pb from '@/lib/pocketbase/client'
-import { DominusUser } from '@/types/dominus'
+import { DominusUser, UserRole } from '@/types/dominus'
 import { registrarLogAuditoria } from '@/lib/pocketbase/auditService'
 
-export interface CriarUsuarioEquipeInput {
-  name: string
-  email: string
-  password: string
-  cargo?: string
-  telefone?: string
-  observacoes?: string
-  must_change_password?: boolean
-}
+/**
+ * Serviço de gestão de usuários (Equipe e Acessos).
+ *
+ * Observação sobre e-mail: registros auth do PocketBase com `emailVisibility=false`
+ * não devolvem o campo email para quem não é o dono — na prática isso vinha como
+ * undefined e estourava "Cannot read properties of undefined (reading 'toLowerCase')"
+ * na tela de Equipe e Acessos. A partir daqui o email é SEMPRE normalizado para string.
+ */
 
-export interface CriarUsuarioClienteInput {
-  name: string
-  email: string
-  password: string
-  empresa_id: string
-  telefone?: string
-  cargo?: string
-  observacoes?: string
-  must_change_password?: boolean
-}
+export const FILTRO_USUARIOS_NAO_EXCLUIDOS = "deleted_at = '' || deleted_at = null"
 
-export interface EditarUsuarioInput {
-  name?: string
-  email?: string
-  telefone?: string
-  cargo?: string
-  observacoes?: string
-  empresa_id?: string
-  role?: 'contador' | 'cliente'
+/** Normaliza qualquer valor vindo do PocketBase para string segura. */
+export const textoSeguro = (valor: unknown): string => {
+  if (typeof valor === 'string') return valor
+  if (valor === null || valor === undefined) return ''
+  return String(valor)
 }
 
 export interface UsuarioComEmpresa extends DominusUser {
+  username?: string
   empresa_nome?: string
   empresa_cnpj?: string
 }
 
-/**
- * Listar todos os usuários não excluídos (ou todos com filtro)
- */
-export async function listarUsuarios(incluirExcluidos = false): Promise<UsuarioComEmpresa[]> {
-  const filter = incluirExcluidos ? '' : "deleted_at = '' || deleted_at = null"
-  const records = await pb.collection('users').getFullList({
+/** Converte um registro PocketBase em UsuarioComEmpresa, com todos os campos de texto garantidos. */
+const mapearUsuario = (
+  rec: Record<string, unknown>,
+  empresaNome?: string,
+  empresaCnpj?: string,
+): UsuarioComEmpresa => {
+  const email = textoSeguro(rec.email)
+  const nome = textoSeguro(rec.name) || email.split('@')[0] || 'Usuário'
+  return {
+    id: String(rec.id || ''),
+    email,
+    name: nome,
+    username: textoSeguro(rec.username),
+    role: (rec.role as UserRole) || 'cliente',
+    empresa_id: textoSeguro(rec.empresa_id) || undefined,
+    avatar: textoSeguro(rec.avatar) || undefined,
+    must_change_password: !!rec.must_change_password,
+    lgpd_accepted: !!rec.lgpd_accepted,
+    lgpd_accepted_at: textoSeguro(rec.lgpd_accepted_at) || undefined,
+    failed_login_attempts: (rec.failed_login_attempts as number) || 0,
+    locked_until: textoSeguro(rec.locked_until) || undefined,
+    ativo: rec.ativo !== false,
+    cargo: textoSeguro(rec.cargo) || undefined,
+    telefone: textoSeguro(rec.telefone) || undefined,
+    observacoes: textoSeguro(rec.observacoes) || undefined,
+    deleted_at: textoSeguro(rec.deleted_at) || undefined,
+    empresa_nome: textoSeguro(empresaNome) || undefined,
+    empresa_cnpj: textoSeguro(empresaCnpj) || undefined,
+    created: String(rec.created || ''),
+    updated: String(rec.updated || ''),
+  }
+}
+
+/** Lista usuários não excluídos, com o nome da empresa vinculada quando houver. */
+export const listarUsuarios = async (_soNaoExcluidos?: boolean): Promise<UsuarioComEmpresa[]> => {
+  const registros = await pb.collection('users').getFullList({
+    filter: FILTRO_USUARIOS_NAO_EXCLUIDOS,
     sort: '-created',
-    filter,
   })
 
-  // Buscar empresas para mapeamento
-  let empresasMap: Record<string, { razao_social: string; cnpj: string }> = {}
-  try {
-    const empresas = await pb.collection('empresas').getFullList({
-      filter: "deleted_at = '' || deleted_at = null",
-      fields: 'id,razao_social,cnpj',
-    })
-    empresasMap = empresas.reduce(
-      (acc, emp) => {
-        acc[emp.id] = { razao_social: emp.razao_social, cnpj: emp.cnpj }
-        return acc
-      },
-      {} as Record<string, { razao_social: string; cnpj: string }>,
-    )
-  } catch (err) {
-    console.warn('Erro ao mapear empresas para usuários:', err)
+  const lista: UsuarioComEmpresa[] = []
+  for (const rec of registros as unknown as Record<string, unknown>[]) {
+    const usuario = mapearUsuario(rec)
+    if (usuario.empresa_id) {
+      try {
+        const emp = await pb.collection('empresas').getOne(usuario.empresa_id)
+        usuario.empresa_nome = textoSeguro(emp?.razao_social)
+        usuario.empresa_cnpj = textoSeguro((emp as Record<string, unknown>)?.cnpj)
+      } catch {
+        // empresa pode ter sido excluída; segue sem nome
+      }
+    }
+    lista.push(usuario)
+  }
+  return lista
+}
+
+export interface CriarUsuarioEquipeInput {
+  name: string
+  email?: string
+  username?: string
+  password: string
+  cargo?: string
+  telefone?: string
+  observacoes?: string
+}
+
+export interface CriarUsuarioClienteInput {
+  name: string
+  email?: string
+  username?: string
+  password: string
+  empresa_id: string
+  observacoes?: string
+}
+
+const normalizarUsername = (valor?: string): string =>
+  (valor || '').trim().toLowerCase().replace(/\s+/g, '')
+
+/** Normaliza username para busca de unicidade: sem espaços, em minúsculas. */
+export const prepararUsername = normalizarUsername
+
+export interface ValidacaoNovoUsuario {
+  ok: boolean
+  erros: Record<string, string>
+}
+
+const validarIdentificacao = (email?: string, username?: string): Record<string, string> => {
+  const erros: Record<string, string> = {}
+  const temEmail = !!(email && email.trim())
+  const temUsername = !!(username && username.trim())
+
+  if (!temEmail && !temUsername) {
+    erros.identificacao = 'Informe um e-mail ou um nome de usuário para o acesso.'
+    return erros
   }
 
-  return records.map((rec) => {
-    const empData = rec.empresa_id ? empresasMap[rec.empresa_id] : undefined
-    return {
-      id: rec.id,
-      email: rec.email,
-      name: rec.name || rec.email.split('@')[0],
-      role: (rec.role as 'contador' | 'cliente') || 'cliente',
-      empresa_id: rec.empresa_id || undefined,
-      avatar: rec.avatar || undefined,
-      must_change_password: !!rec.must_change_password,
-      lgpd_accepted: !!rec.lgpd_accepted,
-      lgpd_accepted_at: rec.lgpd_accepted_at,
-      failed_login_attempts: rec.failed_login_attempts || 0,
-      locked_until: rec.locked_until || undefined,
-      ativo: rec.ativo !== false,
-      cargo: rec.cargo || undefined,
-      telefone: rec.telefone || undefined,
-      observacoes: rec.observacoes || undefined,
-      deleted_at: rec.deleted_at || undefined,
-      created: rec.created,
-      updated: rec.updated,
-      empresa_nome: empData?.razao_social,
-      empresa_cnpj: empData?.cnpj,
+  if (temEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email!.trim())) {
+    erros.email = 'Informe um e-mail válido (ou deixe vazio e use apenas o usuário).'
+  }
+
+  if (temUsername) {
+    const u = normalizarUsername(username)
+    if (u.length < 3) {
+      erros.username = 'O nome de usuário deve ter ao menos 3 caracteres.'
+    } else if (!/^[a-z0-9._-]+$/.test(u)) {
+      erros.username =
+        'Use apenas letras (sem acento), números, ponto, hífen ou underline no nome de usuário.'
     }
-  })
+  }
+  return erros
+}
+
+/** Valida se username (ou e-mail) já está em uso por outro usuário ativo. */
+export const erroIdentificacaoDuplicada = async (
+  email?: string,
+  username?: string,
+  idIgnore?: string,
+): Promise<Record<string, string>> => {
+  const erros: Record<string, string> = {}
+  const u = normalizarUsername(username)
+
+  if (u) {
+    const existentes = await pb.collection('users').getList(1, 1, {
+      filter: `username ~ '${u}' && id != '${idIgnore || ''}'`,
+    })
+    if (existentes.totalItems > 0) {
+      erros.username = 'Este nome de usuário já está em uso por outro login.'
+    }
+  }
+
+  const e = (email || '').trim().toLowerCase()
+  if (e) {
+    const existentesEmail = await pb.collection('users').getList(1, 1, {
+      filter: `email ~ '${e}' && id != '${idIgnore || ''}'`,
+    })
+    if (existentesEmail.totalItems > 0) {
+      erros.email = 'Este e-mail já está em uso por outro login.'
+    }
+  }
+  return erros
 }
 
 /**
- * Cadastrar novo usuário da equipe (perfil contador)
+ * Valida a identificação (e-mail e/ou username) e lança erro com mensagem
+ * amigável quando algo estiver ausente, inválido ou duplicado.
  */
-export async function cadastrarUsuarioEquipe(
-  input: CriarUsuarioEquipeInput,
-  currentUser: DominusUser,
-): Promise<DominusUser> {
-  const emailLimpo = input.email.trim().toLowerCase()
-
-  // Verificar se e-mail já existe
-  const existentes = await pb.collection('users').getList(1, 1, {
-    filter: `email = '${emailLimpo}'`,
-  })
-  if (existentes.totalItems > 0) {
-    throw new Error('Já existe um usuário cadastrado com este e-mail no sistema.')
+const garantirIdentificacaoValida = async (
+  email?: string,
+  username?: string,
+  idIgnore?: string,
+): Promise<void> => {
+  const errosEstaticos = validarIdentificacao(email, username)
+  if (Object.keys(errosEstaticos).length > 0) {
+    throw new Error(Object.values(errosEstaticos)[0])
   }
+  const errosDuplicidade = await erroIdentificacaoDuplicada(email, username, idIgnore)
+  if (Object.keys(errosDuplicidade).length > 0) {
+    throw new Error(Object.values(errosDuplicidade)[0])
+  }
+}
 
-  const record = await pb.collection('users').create({
-    name: input.name.trim(),
-    email: emailLimpo,
-    password: input.password,
-    passwordConfirm: input.password,
-    role: 'contador',
-    cargo: input.cargo?.trim() || '',
-    telefone: input.telefone?.trim() || '',
-    observacoes: input.observacoes?.trim() || '',
-    must_change_password: input.must_change_password !== false,
-    ativo: true,
-    failed_login_attempts: 0,
-    locked_until: '',
-    deleted_at: '',
-  })
+const montarPayload = (
+  dados: { name: string; email?: string; username?: string },
+  incluirSenha?: string,
+): Record<string, unknown> => {
+  const payload: Record<string, unknown> = {
+    name: dados.name.trim(),
+    emailVisibility: true,
+  }
+  const email = (dados.email || '').trim()
+  if (email) payload.email = email
+  const u = normalizarUsername(dados.username)
+  if (u) payload.username = u
+
+  if (incluirSenha) {
+    payload.password = incluirSenha
+    payload.passwordConfirm = incluirSenha
+  }
+  return payload
+}
+
+/** Cadastra um membro da equipe contábil (role contador). */
+export const cadastrarUsuarioEquipe = async (
+  input: CriarUsuarioEquipeInput,
+  usuarioAtual?: DominusUser | null,
+): Promise<UsuarioComEmpresa> => {
+  await garantirIdentificacaoValida(input.email, input.username)
+
+  const payload = montarPayload(input, input.password)
+  payload.role = 'contador'
+  payload.ativo = true
+  payload.must_change_password = true
+  if (input.cargo !== undefined) payload.cargo = input.cargo
+  if (input.telefone !== undefined) payload.telefone = input.telefone
+  if (input.observacoes !== undefined) payload.observacoes = input.observacoes
+
+  const rec = await pb.collection('users').create(payload)
+  const criado = mapearUsuario(rec as unknown as Record<string, unknown>)
 
   await registrarLogAuditoria({
-    usuarioId: currentUser.id,
-    usuarioNome: currentUser.name,
-    usuarioRole: currentUser.role,
+    usuarioId: usuarioAtual?.id,
+    usuarioNome: usuarioAtual?.name,
+    usuarioRole: usuarioAtual?.role,
     acao: 'USUARIO_CRIADO',
     entidade: 'users',
-    entidadeId: record.id,
-    valorNovo: {
-      name: record.name,
-      email: record.email,
-      role: 'contador',
-      cargo: record.cargo,
-    },
-    detalhes: `Novo membro da equipe contábil cadastrado: ${record.name} (${record.email}) - Cargo: ${record.cargo || 'Não especificado'}`,
+    entidadeId: criado.id,
+    detalhes: `Membro da equipe cadastrado: ${criado.name} (${criado.email || criado.username}).`,
   })
-
-  return record as unknown as DominusUser
+  return criado
 }
 
-/**
- * Cadastrar novo usuário cliente vinculado a uma empresa
- */
-export async function cadastrarUsuarioCliente(
+/** Cadastra um login de cliente vinculado a uma empresa. */
+export const cadastrarUsuarioCliente = async (
   input: CriarUsuarioClienteInput,
-  currentUser: DominusUser,
-): Promise<DominusUser> {
-  const emailLimpo = input.email.trim().toLowerCase()
+  usuarioAtual?: DominusUser | null,
+): Promise<UsuarioComEmpresa> => {
+  await garantirIdentificacaoValida(input.email, input.username)
 
-  // Verificar se e-mail já existe
-  const existentes = await pb.collection('users').getList(1, 1, {
-    filter: `email = '${emailLimpo}'`,
-  })
-  if (existentes.totalItems > 0) {
-    throw new Error('Já existe um usuário cadastrado com este e-mail no sistema.')
-  }
+  const payload = montarPayload(input, input.password)
+  payload.role = 'cliente'
+  payload.ativo = true
+  payload.must_change_password = true
+  payload.empresa_id = input.empresa_id
+  if (input.observacoes !== undefined) payload.observacoes = input.observacoes
 
-  if (!input.empresa_id) {
-    throw new Error('É obrigatório vincular o usuário cliente a uma empresa.')
-  }
-
-  const record = await pb.collection('users').create({
-    name: input.name.trim(),
-    email: emailLimpo,
-    password: input.password,
-    passwordConfirm: input.password,
-    role: 'cliente',
-    empresa_id: input.empresa_id,
-    cargo: input.cargo?.trim() || '',
-    telefone: input.telefone?.trim() || '',
-    observacoes: input.observacoes?.trim() || '',
-    must_change_password: input.must_change_password !== false,
-    ativo: true,
-    failed_login_attempts: 0,
-    locked_until: '',
-    deleted_at: '',
-  })
+  const rec = await pb.collection('users').create(payload)
+  const criado = mapearUsuario(rec as unknown as Record<string, unknown>)
 
   await registrarLogAuditoria({
-    usuarioId: currentUser.id,
-    usuarioNome: currentUser.name,
-    usuarioRole: currentUser.role,
+    usuarioId: usuarioAtual?.id,
+    usuarioNome: usuarioAtual?.name,
+    usuarioRole: usuarioAtual?.role,
     empresaId: input.empresa_id,
     acao: 'USUARIO_CRIADO',
     entidade: 'users',
-    entidadeId: record.id,
-    valorNovo: {
-      name: record.name,
-      email: record.email,
-      role: 'cliente',
-      empresa_id: input.empresa_id,
-    },
-    detalhes: `Novo usuário cliente criado e vinculado à empresa: ${record.name} (${record.email})`,
+    entidadeId: criado.id,
+    detalhes: `Login de cliente cadastrado: ${criado.name} (${criado.email || criado.username}).`,
   })
-
-  return record as unknown as DominusUser
+  return criado
 }
 
-/**
- * Editar dados do usuário
- */
-export async function editarUsuario(
+export interface EditarUsuarioInput {
+  name: string
+  email?: string
+  username?: string
+  cargo?: string
+  telefone?: string
+  observacoes?: string
+  empresa_id?: string
+  role?: UserRole
+}
+
+/** Salva a edição de um usuário (nome, identificação, cargo, contato). */
+export const editarUsuario = async (
   id: string,
   input: EditarUsuarioInput,
-  currentUser: DominusUser,
-  usuarioAnterior: DominusUser,
-): Promise<void> {
-  const payload: Record<string, unknown> = {}
+  usuarioAtual?: DominusUser | null,
+  _usuarioAntigo?: UsuarioComEmpresa | null,
+): Promise<UsuarioComEmpresa> => {
+  await garantirIdentificacaoValida(input.email, input.username, id)
 
-  if (input.name !== undefined) payload.name = input.name.trim()
-  if (input.telefone !== undefined) payload.telefone = input.telefone.trim()
-  if (input.cargo !== undefined) payload.cargo = input.cargo.trim()
-  if (input.observacoes !== undefined) payload.observacoes = input.observacoes.trim()
+  const payload = montarPayload(input)
+  if (input.cargo !== undefined) payload.cargo = input.cargo
+  if (input.telefone !== undefined) payload.telefone = input.telefone
+  if (input.observacoes !== undefined) payload.observacoes = input.observacoes
+  if (input.role !== undefined) payload.role = input.role
+  if (input.empresa_id !== undefined) payload.empresa_id = input.empresa_id
 
-  if (
-    input.email !== undefined &&
-    input.email.trim().toLowerCase() !== usuarioAnterior.email.toLowerCase()
-  ) {
-    const emailLimpo = input.email.trim().toLowerCase()
-    const existentes = await pb.collection('users').getList(1, 1, {
-      filter: `email = '${emailLimpo}' && id != '${id}'`,
-    })
-    if (existentes.totalItems > 0) {
-      throw new Error('Este e-mail já está sendo utilizado por outro usuário.')
-    }
-    payload.email = emailLimpo
-  }
-
-  // Se for cliente, pode alterar a empresa
-  if (input.empresa_id !== undefined) {
-    payload.empresa_id = input.empresa_id
-  }
-
-  // Segurança: se for alterar role, nunca permitir cliente promover a contador sem ser contador
-  if (input.role !== undefined) {
-    if (currentUser.role !== 'contador') {
-      throw new Error('Apenas o contador pode alterar o perfil de um usuário.')
-    }
-    payload.role = input.role
-  }
-
-  await pb.collection('users').update(id, payload)
+  const rec = await pb.collection('users').update(id, payload)
+  const atualizado = mapearUsuario(rec as unknown as Record<string, unknown>)
 
   await registrarLogAuditoria({
-    usuarioId: currentUser.id,
-    usuarioNome: currentUser.name,
-    usuarioRole: currentUser.role,
-    empresaId: (payload.empresa_id as string) || usuarioAnterior.empresa_id,
+    usuarioId: usuarioAtual?.id,
+    usuarioNome: usuarioAtual?.name,
+    usuarioRole: usuarioAtual?.role,
+    empresaId: atualizado.empresa_id,
     acao: 'USUARIO_ALTERADO',
     entidade: 'users',
     entidadeId: id,
-    valorAnterior: usuarioAnterior,
-    valorNovo: payload,
-    detalhes: `Dados do usuário ${usuarioAnterior.name} alterados.`,
+    detalhes: `Login alterado: ${atualizado.name} (${atualizado.email || atualizado.username}).`,
   })
+  return atualizado
 }
 
-/**
- * Redefinir senha do usuário com senha temporária
- */
-export async function redefinirSenhaUsuario(
+/** Gera nova senha temporária (primeiro acesso obrigatório). */
+export const redefinirSenhaUsuario = async (
   id: string,
-  novaSenhaTemp: string,
-  currentUser: DominusUser,
-  usuarioNome: string,
-): Promise<void> {
-  if (id === currentUser.id) {
-    throw new Error(
-      'Você não pode redefinir a senha do seu próprio usuário nesta tela — use a opção de alteração de senha do seu perfil.',
-    )
-  }
-
-  if (novaSenhaTemp.length < 8) {
-    throw new Error('A nova senha deve possuir no mínimo 8 caracteres.')
-  }
-
+  novaSenha: string,
+  usuarioAtual?: DominusUser | null,
+  _nomeUsuario?: string,
+): Promise<void> => {
   await pb.collection('users').update(id, {
-    password: novaSenhaTemp,
-    passwordConfirm: novaSenhaTemp,
+    password: novaSenha,
+    passwordConfirm: novaSenha,
     must_change_password: true,
-    failed_login_attempts: 0,
-    locked_until: '',
   })
-
-  // Limpar qualquer bloqueio local caso seja a mesma máquina
-  try {
-    const userRec = await pb.collection('users').getOne(id)
-    if (userRec.email) {
-      localStorage.removeItem(`login_attempts_${userRec.email.toLowerCase().trim()}`)
-    }
-  } catch {
-    /* intentionally ignored */
-  }
-
   await registrarLogAuditoria({
-    usuarioId: currentUser.id,
-    usuarioNome: currentUser.name,
-    usuarioRole: currentUser.role,
+    usuarioId: usuarioAtual?.id,
+    usuarioNome: usuarioAtual?.name,
+    usuarioRole: usuarioAtual?.role,
     acao: 'SENHA_REDEFINIDA',
     entidade: 'users',
     entidadeId: id,
-    detalhes: `Senha temporária gerada para ${usuarioNome} com exigência de troca no primeiro acesso.`,
+    detalhes: 'Senha redefinida pelo escritório; troca obrigatória no próximo acesso.',
   })
 }
 
-/**
- * Ativar ou desativar usuário
- */
-export async function alternarStatusUsuario(
+/** Desativa/reativa um login (o usuário perde a sessão e não consegue mais entrar). */
+export const alternarStatusUsuario = async (
   id: string,
-  novoStatus: boolean,
-  currentUser: DominusUser,
-  usuarioNome: string,
-): Promise<void> {
-  if (id === currentUser.id && !novoStatus) {
-    throw new Error('Você não pode desativar seu próprio acesso — peça a outro contador-chefe.')
-  }
-
-  await pb.collection('users').update(id, {
-    ativo: novoStatus,
-  })
+  novoAtivo: boolean,
+  usuarioAtual?: DominusUser | null,
+  nomeUsuario?: string,
+): Promise<boolean> => {
+  await pb.collection('users').update(id, { ativo: novoAtivo })
 
   await registrarLogAuditoria({
-    usuarioId: currentUser.id,
-    usuarioNome: currentUser.name,
-    usuarioRole: currentUser.role,
-    acao: novoStatus ? 'USUARIO_ATIVADO' : 'USUARIO_DESATIVADO',
+    usuarioId: usuarioAtual?.id,
+    usuarioNome: usuarioAtual?.name,
+    usuarioRole: usuarioAtual?.role,
+    acao: novoAtivo ? 'USUARIO_ATIVADO' : 'USUARIO_DESATIVADO',
     entidade: 'users',
     entidadeId: id,
-    detalhes: `Acesso do usuário ${usuarioNome} foi ${novoStatus ? 'ATIVADO' : 'DESATIVADO'}.`,
+    detalhes: `Login ${novoAtivo ? 'reativado' : 'desativado'}: ${nomeUsuario || id}.`,
   })
+  return novoAtivo
 }
 
-/**
- * Desbloquear usuário bloqueado por tentativas incorretas
- */
-export async function desbloquearUsuario(
+/** Libera bloqueio por tentativas erradas (zera contador e locked_until). */
+export const desbloquearUsuario = async (
   id: string,
-  currentUser: DominusUser,
-  usuarioNome: string,
-  userEmail: string,
-): Promise<void> {
+  usuarioAtual?: DominusUser | null,
+  nomeUsuario?: string,
+  emailUsuario?: string,
+): Promise<void> => {
   await pb.collection('users').update(id, {
     failed_login_attempts: 0,
     locked_until: '',
   })
-
-  // Limpar localStorage de tentativas para esse email
-  if (userEmail) {
-    localStorage.removeItem(`login_attempts_${userEmail.toLowerCase().trim()}`)
-  }
-
   await registrarLogAuditoria({
-    usuarioId: currentUser.id,
-    usuarioNome: currentUser.name,
-    usuarioRole: currentUser.role,
+    usuarioId: usuarioAtual?.id,
+    usuarioNome: usuarioAtual?.name,
+    usuarioRole: usuarioAtual?.role,
     acao: 'USUARIO_DESBLOQUEADO',
     entidade: 'users',
     entidadeId: id,
-    detalhes: `Bloqueio por tentativas incorretas do usuário ${usuarioNome} (${userEmail}) foi cancelado pelo contador.`,
+    detalhes: `Bloqueio liberado pelo escritório: ${nomeUsuario || id}.`,
   })
+  // limpa também o bloqueio local do navegador para esta identificação
+  const chave = `login_attempts_${textoSeguro(emailUsuario).toLowerCase().trim()}`
+  if (chave.length > 'login_attempts_'.length) localStorage.removeItem(chave)
 }
 
-/**
- * Exclusão de usuário (Exclusão lógica preservando trilha de auditoria e integridade)
- */
-export async function excluirUsuario(
+/** Exclusão lógica: o login sai das listagens e não autentica mais. */
+export const excluirUsuario = async (
   id: string,
-  currentUser: DominusUser,
-  usuarioNome: string,
-): Promise<void> {
-  if (id === currentUser.id) {
-    throw new Error('Você não pode excluir seu próprio acesso — peça a outro contador-chefe.')
-  }
-
-  const nowIso = new Date().toISOString()
-
-  // Realizar exclusão lógica: desativar e marcar deleted_at
+  usuarioAtual?: DominusUser | null,
+  nomeUsuario?: string,
+  emailUsuario?: string,
+): Promise<void> => {
   await pb.collection('users').update(id, {
+    deleted_at: new Date().toISOString(),
     ativo: false,
-    deleted_at: nowIso,
   })
-
   await registrarLogAuditoria({
-    usuarioId: currentUser.id,
-    usuarioNome: currentUser.name,
-    usuarioRole: currentUser.role,
+    usuarioId: usuarioAtual?.id,
+    usuarioNome: usuarioAtual?.name,
+    usuarioRole: usuarioAtual?.role,
     acao: 'USUARIO_EXCLUIDO',
     entidade: 'users',
     entidadeId: id,
-    detalhes: `Exclusão lógica do usuário ${usuarioNome}. Trilha de auditoria e históricos preservados.`,
+    detalhes: `Login excluído (lógico): ${nomeUsuario || id}.`,
   })
+  const chave = `login_attempts_${textoSeguro(emailUsuario).toLowerCase().trim()}`
+  if (chave.length > 'login_attempts_'.length) localStorage.removeItem(chave)
 }

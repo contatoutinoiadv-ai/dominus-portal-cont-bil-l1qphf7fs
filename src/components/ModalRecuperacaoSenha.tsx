@@ -76,7 +76,8 @@ export const ModalRecuperacaoSenha: React.FC<ModalRecuperacaoSenhaProps> = ({
             <div>
               <DialogTitle className="text-lg font-semibold">Recuperação de Acesso</DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Informe o e-mail cadastrado da sua empresa ou usuário contábil.
+                Informe o e-mail cadastrado da sua empresa ou usuário contábil. Recuperação de senha
+                exige e-mail — para outros casos, contate o escritório.
               </DialogDescription>
             </div>
           </div>

@@ -42,26 +42,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const syncUserFromPb = useCallback(async () => {
     if (pb.authStore.isValid && pb.authStore.record) {
-      const rec = pb.authStore.record
+      const rec = pb.authStore.record as unknown as Record<string, unknown>
+      const emailSeguro = typeof rec.email === 'string' ? rec.email : ''
       const dominusUser: DominusUser = {
-        id: rec.id,
-        email: rec.email,
-        name: rec.name || rec.email.split('@')[0],
+        id: String(rec.id || ''),
+        email: emailSeguro,
+        username: typeof rec.username === 'string' ? rec.username : undefined,
+        name: (rec.name as string) || emailSeguro.split('@')[0] || 'Usuário',
         role: (rec.role as 'contador' | 'cliente') || 'cliente',
-        empresa_id: rec.empresa_id || undefined,
-        avatar: rec.avatar || undefined,
+        empresa_id: (rec.empresa_id as string) || undefined,
+        avatar: (rec.avatar as string) || undefined,
         must_change_password: !!rec.must_change_password,
         lgpd_accepted: !!rec.lgpd_accepted,
-        lgpd_accepted_at: rec.lgpd_accepted_at,
-        failed_login_attempts: rec.failed_login_attempts,
-        locked_until: rec.locked_until,
+        lgpd_accepted_at: (rec.lgpd_accepted_at as string) || undefined,
+        failed_login_attempts: (rec.failed_login_attempts as number) || 0,
+        locked_until: (rec.locked_until as string) || undefined,
         ativo: rec.ativo !== false,
-        cargo: rec.cargo,
-        telefone: rec.telefone,
-        observacoes: rec.observacoes,
-        deleted_at: rec.deleted_at,
-        created: rec.created,
-        updated: rec.updated,
+        cargo: (rec.cargo as string) || undefined,
+        telefone: (rec.telefone as string) || undefined,
+        observacoes: (rec.observacoes as string) || undefined,
+        deleted_at: (rec.deleted_at as string) || undefined,
+        created: String(rec.created || ''),
+        updated: String(rec.updated || ''),
       }
       setUser(dominusUser)
       if (dominusUser.empresa_id) {
@@ -87,12 +89,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [syncUserFromPb])
 
   const login = async (
-    email: string,
+    identificacao: string,
     pass: string,
   ): Promise<{ success: boolean; error?: string; locked?: boolean }> => {
+    const idSegura = (identificacao || '').trim()
     try {
       // 1. Verificar tentativas erradas no localStorage para proteção contra força bruta
-      const storageKey = `login_attempts_${email.toLowerCase().trim()}`
+      const storageKey = `login_attempts_${idSegura.toLowerCase()}`
       const rawAttempts = localStorage.getItem(storageKey)
       let attemptData = { count: 0, lockedUntil: 0 }
       if (rawAttempts) {
@@ -112,11 +115,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      // Autenticar com PocketBase
-      const authData = await pb.collection('users').authWithPassword(email.trim(), pass)
+      // Autenticar com PocketBase — aceita e-mail OU nome de usuário (identityFields)
+      const authData = await pb.collection('users').authWithPassword(idSegura, pass)
       localStorage.removeItem(storageKey)
 
-      const rec = authData.record
+      const rec = authData.record as unknown as Record<string, unknown>
 
       // Verificar se o usuário está excluído logicamente ou desativado
       if (rec.deleted_at) {
@@ -138,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Verificar bloqueio no banco de dados (locked_until)
       if (rec.locked_until) {
-        const lockedTime = new Date(rec.locked_until).getTime()
+        const lockedTime = new Date(String(rec.locked_until)).getTime()
         if (lockedTime > Date.now()) {
           pb.authStore.clear()
           const minRestantes = Math.max(1, Math.ceil((lockedTime - Date.now()) / 60000))
@@ -150,25 +153,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
+      const emailSeguro = typeof rec.email === 'string' ? rec.email : ''
       const dominusUser: DominusUser = {
-        id: rec.id,
-        email: rec.email,
-        name: rec.name || rec.email.split('@')[0],
+        id: String(rec.id || ''),
+        email: emailSeguro,
+        username: typeof rec.username === 'string' ? rec.username : undefined,
+        name: (rec.name as string) || emailSeguro.split('@')[0] || 'Usuário',
         role: (rec.role as 'contador' | 'cliente') || 'cliente',
-        empresa_id: rec.empresa_id || undefined,
-        avatar: rec.avatar || undefined,
+        empresa_id: (rec.empresa_id as string) || undefined,
+        avatar: (rec.avatar as string) || undefined,
         must_change_password: !!rec.must_change_password,
         lgpd_accepted: !!rec.lgpd_accepted,
-        lgpd_accepted_at: rec.lgpd_accepted_at,
-        failed_login_attempts: rec.failed_login_attempts,
-        locked_until: rec.locked_until,
+        lgpd_accepted_at: (rec.lgpd_accepted_at as string) || undefined,
+        failed_login_attempts: (rec.failed_login_attempts as number) || 0,
+        locked_until: (rec.locked_until as string) || undefined,
         ativo: rec.ativo !== false,
-        cargo: rec.cargo,
-        telefone: rec.telefone,
-        observacoes: rec.observacoes,
-        deleted_at: rec.deleted_at,
-        created: rec.created,
-        updated: rec.updated,
+        cargo: (rec.cargo as string) || undefined,
+        telefone: (rec.telefone as string) || undefined,
+        observacoes: (rec.observacoes as string) || undefined,
+        deleted_at: (rec.deleted_at as string) || undefined,
+        created: String(rec.created || ''),
+        updated: String(rec.updated || ''),
       }
 
       setUser(dominusUser)
@@ -191,7 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: unknown) {
       const errorObj = err as { message?: string }
       // Incrementar contador de falhas
-      const storageKey = `login_attempts_${email.toLowerCase().trim()}`
+      const storageKey = `login_attempts_${idSegura.toLowerCase()}`
       const rawAttempts = localStorage.getItem(storageKey)
       let attemptData = { count: 0, lockedUntil: 0 }
       if (rawAttempts) {
@@ -217,7 +222,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const tentativasRestantes = 5 - attemptData.count
       return {
         success: false,
-        error: `E-mail ou senha incorretos. Tentativas restantes antes do bloqueio: ${tentativasRestantes}. ${errorObj.message || ''}`,
+        error: `Usuário/e-mail ou senha incorretos. Tentativas restantes antes do bloqueio: ${tentativasRestantes}. ${errorObj.message || ''}`,
       }
     }
   }

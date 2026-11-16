@@ -7,6 +7,7 @@ export type UserRole = 'contador' | 'cliente'
 export interface DominusUser {
   id: string
   email: string
+  username?: string
   name: string
   role: UserRole
   empresa_id?: string
