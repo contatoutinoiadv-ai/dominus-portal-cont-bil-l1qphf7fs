@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-03T17:38:25.634Z",
+  "generatedAt": "2026-11-16T12:14:59.975Z",
   "collections": [
     {
       "name": "users",
@@ -1539,7 +1539,8 @@
             "SENHA_REDEFINIDA",
             "EMPRESA_CRIADA",
             "EMPRESA_ALTERADA",
-            "EMPRESA_EXCLUIDA"
+            "EMPRESA_EXCLUIDA",
+            "LIMPEZA_BASE"
           ]
         }
       ],
