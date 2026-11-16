@@ -21,10 +21,15 @@ const CAMPOS = [
   { nome: 'rbt12_declarado_pa', tipo: 'text' },
   { nome: 'rbt12_atual', tipo: 'number' },
   { nome: 'rbt12_atual_pa', tipo: 'text' },
-  { nome: 'status_cadastro', tipo: 'select', values: ['Completo', 'Aguardando documentação'], maxSelect: 1 },
+  {
+    nome: 'status_cadastro',
+    tipo: 'select',
+    selectValues: ['Completo', 'Aguardando documentação'],
+    maxSelect: 1,
+  },
   { nome: 'documento_pendente', tipo: 'text' },
   { nome: 'tipo_pessoa', tipo: 'text' },
-  { nome: 'regime_apuracao', tipo: 'select', values: ['Caixa', 'Competência'], maxSelect: 1 },
+  { nome: 'regime_apuracao', tipo: 'select', selectValues: ['Caixa', 'Competência'], maxSelect: 1 },
 ]
 
 migrate(
@@ -39,7 +44,13 @@ migrate(
       } else if (c.tipo === 'text') {
         col.fields.add(new TextField({ name: c.nome }))
       } else if (c.tipo === 'select') {
-        col.fields.add(new SelectField({ name: c.nome, values: c.values, maxSelect: c.maxSelect }))
+        col.fields.add(
+          new SelectField({
+            name: c.nome,
+            values: c.selectValues,
+            maxSelect: c.maxSelect,
+          }),
+        )
       }
     }
 

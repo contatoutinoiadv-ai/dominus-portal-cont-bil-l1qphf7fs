@@ -29,29 +29,21 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "role",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "contador",
-            "cliente"
-          ]
+          "selectValues": ["contador", "cliente"]
         },
         {
           "name": "empresa_id",
@@ -189,12 +181,7 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "MEI",
-            "Simples Nacional",
-            "Lucro Presumido",
-            "Lucro Real"
-          ]
+          "selectValues": ["MEI", "Simples Nacional", "Lucro Presumido", "Lucro Real"]
         },
         {
           "name": "data_inicio_regime",
@@ -243,19 +230,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "permitir_cliente_ver_diagnostico",
@@ -297,24 +279,14 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "MEI",
-            "Simples Nacional",
-            "Lucro Presumido",
-            "Lucro Real"
-          ]
+          "selectValues": ["MEI", "Simples Nacional", "Lucro Presumido", "Lucro Real"]
         },
         {
           "name": "tipo_atividade",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "servicos",
-            "comercio",
-            "industria",
-            "mista"
-          ]
+          "selectValues": ["servicos", "comercio", "industria", "mista"]
         },
         {
           "name": "data_vigencia_inicio",
@@ -357,24 +329,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_enquadramentos_empresa ON enquadramentos (empresa_id)"
-      ]
+      "indexes": ["CREATE INDEX idx_enquadramentos_empresa ON enquadramentos (empresa_id)"]
     },
     {
       "name": "linhas_receita",
@@ -410,25 +375,14 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "servicos",
-            "comercio",
-            "industria"
-          ]
+          "selectValues": ["servicos", "comercio", "industria"]
         },
         {
           "name": "anexo_simples",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "I",
-            "II",
-            "III",
-            "IV",
-            "V",
-            "Nenhum"
-          ]
+          "selectValues": ["I", "II", "III", "IV", "V", "Nenhum"]
         },
         {
           "name": "sujeito_fator_r",
@@ -441,11 +395,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "mesmo_municipio",
-            "outro_municipio",
-            "exterior"
-          ]
+          "selectValues": ["mesmo_municipio", "outro_municipio", "exterior"]
         },
         {
           "name": "municipio_outro_iss",
@@ -476,22 +426,14 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "tributado_normal",
-            "st",
-            "isento",
-            "monofasico"
-          ]
+          "selectValues": ["tributado_normal", "st", "isento", "monofasico"]
         },
         {
           "name": "pis_cofins_tratamento",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "normal",
-            "monofasico"
-          ]
+          "selectValues": ["normal", "monofasico"]
         },
         {
           "name": "aliquota_municipal_iss",
@@ -534,24 +476,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_linhas_receita_empresa ON linhas_receita (empresa_id)"
-      ]
+      "indexes": ["CREATE INDEX idx_linhas_receita_empresa ON linhas_receita (empresa_id)"]
     },
     {
       "name": "lancamentos_faturamento",
@@ -617,12 +552,7 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "Enviado",
-            "Em análise",
-            "Validado",
-            "Devolvido para correção"
-          ]
+          "selectValues": ["Enviado", "Em análise", "Validado", "Devolvido para correção"]
         },
         {
           "name": "observacao_cliente",
@@ -677,19 +607,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": [
@@ -772,24 +697,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_itens_lancamento ON lancamento_itens (lancamento_id)"
-      ]
+      "indexes": ["CREATE INDEX idx_itens_lancamento ON lancamento_itens (lancamento_id)"]
     },
     {
       "name": "folha_mensal",
@@ -849,30 +767,21 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "cliente",
-            "contador",
-            "historico_importado"
-          ]
+          "selectValues": ["cliente", "contador", "historico_importado"]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": [
@@ -985,13 +894,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "ok",
-            "atencao_70",
-            "alerta_85",
-            "critico_95",
-            "estouro"
-          ]
+          "selectValues": ["ok", "atencao_70", "alerta_85", "critico_95", "estouro"]
         },
         {
           "name": "oficial_contador",
@@ -1004,24 +907,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_apuracoes_empresa_comp ON apuracoes (empresa_id, competencia)"
-      ]
+      "indexes": ["CREATE INDEX idx_apuracoes_empresa_comp ON apuracoes (empresa_id, competencia)"]
     },
     {
       "name": "apuracao_detalhes",
@@ -1112,24 +1008,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_detalhes_apuracao ON apuracao_detalhes (apuracao_id)"
-      ]
+      "indexes": ["CREATE INDEX idx_detalhes_apuracao ON apuracao_detalhes (apuracao_id)"]
     },
     {
       "name": "parametros_fiscais",
@@ -1209,19 +1098,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": [
@@ -1288,10 +1172,7 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "contador",
-            "cliente"
-          ]
+          "selectValues": ["contador", "cliente"]
         },
         {
           "name": "observacao",
@@ -1304,24 +1185,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_documentos_empresa ON documentos (empresa_id)"
-      ]
+      "indexes": ["CREATE INDEX idx_documentos_empresa ON documentos (empresa_id)"]
     },
     {
       "name": "comentarios",
@@ -1363,10 +1237,7 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "contador",
-            "cliente"
-          ]
+          "selectValues": ["contador", "cliente"]
         },
         {
           "name": "texto",
@@ -1385,24 +1256,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_comentarios_lancamento ON comentarios (lancamento_id)"
-      ]
+      "indexes": ["CREATE INDEX idx_comentarios_lancamento ON comentarios (lancamento_id)"]
     },
     {
       "name": "notificacoes",
@@ -1432,11 +1296,7 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "contador",
-            "cliente",
-            "todos"
-          ]
+          "selectValues": ["contador", "cliente", "todos"]
         },
         {
           "name": "titulo",
@@ -1482,19 +1342,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": [
@@ -1541,24 +1396,14 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "das",
-            "dctfweb",
-            "trimestral",
-            "envio_faturamento",
-            "interno"
-          ]
+          "selectValues": ["das", "dctfweb", "trimestral", "envio_faturamento", "interno"]
         },
         {
           "name": "status",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "pendente",
-            "concluido",
-            "atrasado"
-          ]
+          "selectValues": ["pendente", "concluido", "atrasado"]
         },
         {
           "name": "descricao",
@@ -1571,24 +1416,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_calendario_vencimento ON calendario_fiscal (data_vencimento)"
-      ]
+      "indexes": ["CREATE INDEX idx_calendario_vencimento ON calendario_fiscal (data_vencimento)"]
     },
     {
       "name": "auditoria",
@@ -1666,19 +1504,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "acao",
@@ -1711,9 +1544,7 @@
           ]
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_auditoria_empresa ON auditoria (empresa_id, created DESC)"
-      ]
+      "indexes": ["CREATE INDEX idx_auditoria_empresa ON auditoria (empresa_id, created DESC)"]
     },
     {
       "name": "intro_config",
@@ -1773,19 +1604,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": []
