@@ -1,6 +1,7 @@
 import pb from '@/lib/pocketbase/client'
 import { DominusUser, UserRole } from '@/types/dominus'
 import { registrarLogAuditoria } from '@/lib/pocketbase/auditService'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
 
 /**
  * Serviço de gestão de usuários (Equipe e Acessos).
@@ -311,18 +312,33 @@ export const editarUsuario = async (
   return atualizado
 }
 
-/** Gera nova senha temporária (primeiro acesso obrigatório). */
+const mensagemErroRedefinicao = (error: unknown): string => {
+  const msg = getErrorMessage(error)
+  if (/old password|oldPassword/i.test(msg)) {
+    return 'O PocketBase exigiu a senha antiga para esta operação. Verifique a regra "Manage" da collection users.'
+  }
+  if (msg && !/failed to update record/i.test(msg)) return msg
+  return 'Não foi possível aplicar a nova senha temporária. Verifique a conexão e tente novamente.'
+}
+
+/** Gera nova senha temporária (primeiro acesso obrigatório) e zera bloqueios. */
 export const redefinirSenhaUsuario = async (
   id: string,
   novaSenha: string,
   usuarioAtual?: DominusUser | null,
   _nomeUsuario?: string,
 ): Promise<void> => {
-  await pb.collection('users').update(id, {
-    password: novaSenha,
-    passwordConfirm: novaSenha,
-    must_change_password: true,
-  })
+  try {
+    await pb.collection('users').update(id, {
+      password: novaSenha,
+      passwordConfirm: novaSenha,
+      must_change_password: true,
+      failed_login_attempts: 0,
+      locked_until: '',
+    })
+  } catch (error) {
+    throw new Error(mensagemErroRedefinicao(error))
+  }
   await registrarLogAuditoria({
     usuarioId: usuarioAtual?.id,
     usuarioNome: usuarioAtual?.name,

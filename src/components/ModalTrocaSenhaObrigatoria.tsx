@@ -14,11 +14,12 @@ import { KeyRound, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/lib/pocketbase/authContext'
 
 export const ModalTrocaSenhaObrigatoria: React.FC = () => {
-  const { user, changePassword } = useAuth()
+  const { user, changePassword, logout } = useAuth()
   const [novaSenha, setNovaSenha] = useState('')
   const [confirmaSenha, setConfirmaSenha] = useState('')
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
+  const [senhaAtual, setSenhaAtual] = useState('')
 
   const aberto = !!user && !!user.must_change_password
 
@@ -35,11 +36,14 @@ export const ModalTrocaSenhaObrigatoria: React.FC = () => {
     }
 
     setSalvando(true)
-    const res = await changePassword(novaSenha)
+    const res = await changePassword(novaSenha, senhaAtual)
     setSalvando(false)
     if (!res.success) {
       setErro(res.error || 'Erro ao alterar senha.')
+      return
     }
+    // Troca concluída: garante sessão limpa para login com a nova senha
+    logout()
   }
 
   if (!aberto) return null
@@ -91,6 +95,18 @@ export const ModalTrocaSenhaObrigatoria: React.FC = () => {
               placeholder="••••••••"
               value={confirmaSenha}
               onChange={(e) => setConfirmaSenha(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="senha-atual">Senha Atual (a temporária usada no login)</Label>
+            <Input
+              id="senha-atual"
+              type="password"
+              placeholder="••••••••"
+              value={senhaAtual}
+              onChange={(e) => setSenhaAtual(e.target.value)}
               required
             />
           </div>

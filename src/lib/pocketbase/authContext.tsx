@@ -16,7 +16,10 @@ interface AuthContextType {
   logout: () => void
   refreshAuth: () => Promise<void>
   acceptLgpd: () => Promise<void>
-  changePassword: (novaSenha: string) => Promise<{ success: boolean; error?: string }>
+  changePassword: (
+    novaSenha: string,
+    senhaAtual?: string,
+  ) => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -270,6 +273,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const changePassword = async (
     novaSenha: string,
+    senhaAtual?: string,
   ): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: 'Usuário não autenticado' }
     if (novaSenha.length < 8) {
@@ -279,6 +283,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await pb.collection('users').update(user.id, {
         password: novaSenha,
         passwordConfirm: novaSenha,
+        // O PocketBase exige oldPassword quando o requisitante não tem acesso
+        // "Manage" sobre o próprio registro (ex.: troca no primeiro acesso).
+        ...(senhaAtual ? { oldPassword: senhaAtual } : {}),
         must_change_password: false,
       })
       setUser((prev) => (prev ? { ...prev, must_change_password: false } : null))
