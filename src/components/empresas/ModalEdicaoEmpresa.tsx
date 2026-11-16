@@ -181,7 +181,7 @@ export const ModalEdicaoEmpresa: React.FC<ModalEdicaoEmpresaProps> = ({
                 <CampoErro mensagem={erros.cnpj} />
               </div>
               <div className="space-y-1">
-                <Label>Data de Abertura</Label>
+                <Label>Data de Abertura (opcional)</Label>
                 <Input
                   type="date"
                   value={dados.data_abertura}
@@ -263,7 +263,7 @@ export const ModalEdicaoEmpresa: React.FC<ModalEdicaoEmpresaProps> = ({
                 </select>
               </div>
               <div className="space-y-1">
-                <Label>Data de Início no Regime</Label>
+                <Label>Data de Início no Regime (opcional)</Label>
                 <Input
                   type="date"
                   value={dados.data_inicio_regime}

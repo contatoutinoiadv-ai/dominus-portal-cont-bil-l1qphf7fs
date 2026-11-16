@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-16T12:57:26.147Z",
+  "generatedAt": "2026-11-16T13:18:18.897Z",
   "collections": [
     {
       "name": "users",
@@ -173,7 +173,7 @@
         {
           "name": "data_abertura",
           "type": "text",
-          "required": true,
+          "required": false,
           "system": false
         },
         {
@@ -186,7 +186,7 @@
         {
           "name": "data_inicio_regime",
           "type": "text",
-          "required": true,
+          "required": false,
           "system": false
         },
         {

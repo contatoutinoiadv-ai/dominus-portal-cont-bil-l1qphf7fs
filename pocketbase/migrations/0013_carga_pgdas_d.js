@@ -15,6 +15,11 @@
 // Valores NÃO arredondados e NÃO alterados — exatamente como declarados.
 // Zero é gravado como 0,00 (inclui os "zero complementado").
 //
+// PASSO 1: torna `data_abertura` e `data_inicio_regime` OPCIONAIS na collection
+// empresas (eram required:true desde a 0002, o que quebrou esta carga). A
+// alteração é feita AQUI (e não numa migração nova) porque a 0013 ainda não foi
+// aplicada no backend; a 0012 está pendente também e não toca nesses campos.
+// Dados existentes são preservados: só muda o required do campo.
 
 const CNPJ_FORMATO = (d) =>
   d.length === 14
@@ -544,6 +549,23 @@ function upsertAlerta(app, empresaRec, titulo, mensagem) {
 // ---------------------------------------------------------------------------
 migrate(
   (app) => {
+    // PASSO 1: data_abertura e data_inicio_regime passam a ser OPCIONAIS.
+    // A 0013 falhou antes porque eram required:true (criadas assim na 0002) e a
+    // carga inclui empresas pendentes sem essas datas. A mudança é feita aqui —
+    // e não numa migração nova — porque esta migração ainda NÃO foi aplicada
+    // (0012/0013 estão pendentes no backend). Nenhum dado é perdido: só o
+    // required:false é gravado de volta na collection existente.
+    const colEmp = app.findCollectionByNameOrId('empresas')
+    const tornarOpcional = (nomeCampo) => {
+      const f = colEmp.fields.getByName(nomeCampo)
+      if (f && f.required) {
+        f.required = false
+      }
+    }
+    tornarOpcional('data_abertura')
+    tornarOpcional('data_inicio_regime')
+    app.save(colEmp)
+
     const adminRec = admin(app)
 
     // ---- 6 empresas completas ------------------------------------------

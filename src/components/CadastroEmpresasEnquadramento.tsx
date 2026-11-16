@@ -76,9 +76,9 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
     uf: 'SP',
     email_responsavel: '',
     telefone_responsavel: '',
-    data_abertura: '2024-01-01',
+    data_abertura: '',
     regime_vigente: 'Simples Nacional' as RegimeTributario,
-    data_inicio_regime: '2024-01-01',
+    data_inicio_regime: '',
     sublimite_estadual: 3600000,
     limite_anual_simples: 4800000,
     limite_anual_mei: 81000,
@@ -175,15 +175,19 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
         permitir_cliente_ver_comparador: true,
       })
 
-      // Criar enquadramento inicial
-      await pb.collection('enquadramentos').create({
-        empresa_id: nova.id,
-        regime: novaEmpresa.regime_vigente,
-        tipo_atividade: 'servicos',
-        data_vigencia_inicio: novaEmpresa.data_inicio_regime,
-        rotulo_enquadramento: `Enquadramento inicial ${novaEmpresa.regime_vigente}`,
-        ativo: true,
-      })
+      // Criar enquadramento inicial (data de vigência opcional: só cria quando
+      // houver data de início no regime ou de abertura informada).
+      const inicioVigencia = novaEmpresa.data_inicio_regime || novaEmpresa.data_abertura || ''
+      if (inicioVigencia) {
+        await pb.collection('enquadramentos').create({
+          empresa_id: nova.id,
+          regime: novaEmpresa.regime_vigente,
+          tipo_atividade: 'servicos',
+          data_vigencia_inicio: inicioVigencia,
+          rotulo_enquadramento: `Enquadramento inicial ${novaEmpresa.regime_vigente}`,
+          ativo: true,
+        })
+      }
 
       // Criar linha de receita padrão inicial
       await pb.collection('linhas_receita').create({
@@ -879,10 +883,9 @@ export const CadastroEmpresasEnquadramento: React.FC<CadastroEmpresasProps> = ({
               </div>
 
               <div className="space-y-1">
-                <Label>Data de Abertura</Label>
+                <Label>Data de Abertura (opcional)</Label>
                 <Input
                   type="date"
-                  required
                   value={novaEmpresa.data_abertura}
                   onChange={(e) =>
                     setNovaEmpresa({ ...novaEmpresa, data_abertura: e.target.value })

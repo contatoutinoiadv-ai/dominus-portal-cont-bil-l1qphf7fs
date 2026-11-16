@@ -88,12 +88,7 @@ export function validarDadosEdicao(dados: DadosEdicaoEmpresa): Record<string, st
     erros.cnpj = 'CNPJ inválido: verifique os dígitos informados.'
   }
 
-  if (!dados.data_abertura) {
-    erros.data_abertura = 'Informe a data de abertura da empresa.'
-  }
-  if (!dados.data_inicio_regime) {
-    erros.data_inicio_regime = 'Informe a data de início no regime.'
-  }
+  // Passo 1: data de abertura e início no regime passam a ser OPCIONAIS.
   if (
     dados.data_abertura &&
     dados.data_inicio_regime &&
